@@ -116,6 +116,9 @@ importers:
       framer-motion:
         specifier: ^12.40.0
         version: 12.40.0(@emotion/is-prop-valid@1.4.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      grommet:
+        specifier: ^2.54.0
+        version: 2.54.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(styled-components@6.4.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0))
       grommet-icons:
         specifier: ^4.14.0
         version: 4.14.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(styled-components@6.4.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0))
@@ -1427,6 +1430,14 @@ packages:
       react-dom: ^16.6.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
       styled-components: '>= 5.x'
 
+  grommet@2.54.0:
+    resolution: {integrity: sha512-SiaOcpu3cWefRKAeE+Ml1h94Xl/B5ccEF3QO54LcFMuQZLLGaG+tPIEbpqRkSKA+E+HbSr6rI/dY2izhNbyqmQ==}
+    engines: {node: '>= 16'}
+    peerDependencies:
+      react: ^16.6.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
+      react-dom: ^16.6.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
+      styled-components: ^5.1.0 || ^6.0.0
+
   input-otp@1.4.1:
     resolution: {integrity: sha512-+yvpmKYKHi9jIGngxagY9oWiiblPB7+nEO75F2l2o4vs+6vpPZZmUl4tBNYuTCvQjhvEIbdNeJu70bhfYP2nbw==}
     peerDependencies:
@@ -1532,6 +1543,12 @@ packages:
 
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
+
+  markdown-to-jsx@7.4.4:
+    resolution: {integrity: sha512-R9SGyfV2zsQx25YIYImACpiQ8dQe617CNyoE1wLst4wFHtiBGG3SEtJDlI1bt9SeotIcbITbVy9+ieQFWfEoQw==}
+    engines: {node: '>= 10'}
+    peerDependencies:
+      react: '>= 0.14.0'
 
   motion-dom@12.40.0:
     resolution: {integrity: sha512-HxU3ZaBwNPVQUBQf1xxgq+7JrPNZvjLVxgbpEZL7RrWJnsxOf0/OM+yrHG9ogLQ31Do/r57Oz2gQWPK+6q62mg==}
@@ -2951,6 +2968,16 @@ snapshots:
       react-dom: 19.2.0(react@19.2.0)
       styled-components: 6.4.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
 
+  grommet@2.54.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(styled-components@6.4.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)):
+    dependencies:
+      '@emotion/is-prop-valid': 1.4.0
+      grommet-icons: 4.14.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(styled-components@6.4.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0))
+      markdown-to-jsx: 7.4.4(react@19.2.0)
+      prop-types: 15.8.1
+      react: 19.2.0
+      react-dom: 19.2.0(react@19.2.0)
+      styled-components: 6.4.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+
   input-otp@1.4.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0):
     dependencies:
       react: 19.2.0
@@ -3024,6 +3051,10 @@ snapshots:
   magic-string@0.30.21:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  markdown-to-jsx@7.4.4(react@19.2.0):
+    dependencies:
+      react: 19.2.0
 
   motion-dom@12.40.0:
     dependencies:
