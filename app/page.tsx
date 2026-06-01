@@ -7,7 +7,7 @@ import styled from "styled-components"
 import { GraduationCap, Calendar, Award, Building2, ArrowRight } from "lucide-react"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import LoadingScreen from "@/components/ui/loading-screen"
+import LoadingScreen from "../components/ui/loading-screen"
 
 export default function HomePage() {
   const [isVisible, setIsVisible] = useState(false)
@@ -65,7 +65,6 @@ export default function HomePage() {
             </h1>
 
             <div className="flex flex-col sm:flex-row justify-center items-center gap-6 mt-8 animate-reveal opacity-0 [animation-delay:400ms]">
-              {/* UPGRADED APPLY NOW BUTTON */}
               <Link href="/admission">
                 <StyledWrapper>
                   <button className="button">
@@ -100,7 +99,7 @@ export default function HomePage() {
               >
                 <Card className="h-full border-card-border bg-card-gradient hover:-translate-y-2 hover:shadow-bg-glow hover:border-blue-500/40 transition-all duration-500">
                   <CardHeader className="p-4 md:p-6 text-center flex flex-col items-center">
-                    <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-blue-500/10 flex items-center justify-center mb-4 group-hover:bg-blue-600 group-hover:rotate-6 transition-all duration-500  animate-float">
+                    <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-blue-500/10 flex items-center justify-center mb-4 group-hover:bg-blue-600 group-hover:rotate-6 transition-all duration-500 animate-float">
                       <card.icon className="w-6 h-6 md:w-7 md:h-7 text-blue-600 dark:text-blue-400 group-hover:text-white transition-colors" />
                     </div>
                     <CardTitle className="text-lg md:text-xl font-bold text-foreground transition-colors group-hover:text-blue-500">
