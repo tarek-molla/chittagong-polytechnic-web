@@ -6,8 +6,9 @@ import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
-import LoadingScreen from "@/components/ui/loading-screen";
-import ThemeToggle from "@/components/ui/theme-toggle";
+import LoadingScreen from "@/components/loading-screen";
+import ThemeToggle from "@/components/theme-toggle";
+import ThemeProvider from "@/components/theme-provider";
 
 const geist = Geist({ subsets: ["latin"] })
 

@@ -4,9 +4,9 @@ import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useState, useRef } from "react"
 import { GraduationCap, Calendar, Award, Building2 } from "lucide-react"
-import { Card, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
-import { Button } from "../components/ui/button"
-import LoadingScreen from "../components/ui/loading-screen"
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import LoadingScreen from "@/components/loading-screen"
 
 export default function HomePage() {
   const [isVisible, setIsVisible] = useState(false)
