@@ -9,59 +9,69 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { applyStudent } from "@/app/actions/student"
 
 export default function AdmissionPage() {
   const [mounted, setMounted] = useState(false)
   
   // Form State
   const [formData, setFormData] = useState({
-    name: "",
-    fatherName: "",
-    motherName: "",
+    full_name: "",
+    father_name: "",
+    mother_name: "",
     email: "",
     phone: "",
     nationality: "BANGLADESHI",
-    birthDate: "",
+    dob: "",
     religion: "",
     department: "COMPUTER SCIENCE"
   })
 
   const [loading, setLoading] = useState(false)
   const [status, setStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null)
+  const [errors, setErrors] = useState<Record<string, string[]>>({})
 
   useEffect(() => setMounted(true), [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
+    // Clear error for the field when user changes it
+    if (errors[e.target.name]) {
+      const newErrors = { ...errors }
+      delete newErrors[e.target.name]
+      setErrors(newErrors)
+    }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
     setStatus(null)
+    setErrors({})
 
     try {
-      const response = await fetch("http://localhost/api/apply.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      })
-
-      const result = await response.json()
+      const data = new FormData(e.currentTarget)
+      const result = await applyStudent(data)
 
       if (result.success) {
-        setStatus({ type: 'success', msg: result.message })
+        setStatus({ type: 'success', msg: result.message || "Success!" })
         // Optional: Clear form
         setFormData({
-          name: "", fatherName: "", motherName: "", email: "",
-          phone: "", nationality: "BANGLADESHI", birthDate: "",
+          full_name: "", father_name: "", mother_name: "", email: "",
+          phone: "", nationality: "BANGLADESHI", dob: "",
           religion: "", department: "COMPUTER SCIENCE"
         })
       } else {
-        setStatus({ type: 'error', msg: result.message || "Submission failed" })
+        // Handle validation errors or database errors
+        if (result.errors) {
+          setErrors(result.errors as Record<string, string[]>)
+          setStatus({ type: 'error', msg: "Please correct the errors below." })
+        } else {
+          setStatus({ type: 'error', msg: result.message || "Submission failed" })
+        }
       }
     } catch (error) {
-      setStatus({ type: 'error', msg: "Connection Error: Is XAMPP running?" })
+      setStatus({ type: 'error', msg: "An unexpected error occurred." })
     } finally {
       setLoading(false)
     }
@@ -139,64 +149,72 @@ export default function AdmissionPage() {
                 <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Full Name *</Label>
                 <div className="relative group">
                   <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
-                  <Input name="name" value={formData.name} onChange={handleChange} required placeholder="JOHN DOE" className="pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10" />
+                  <Input name="full_name" value={formData.full_name} onChange={handleChange} required placeholder="JOHN DOE" className={`pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10 ${errors.full_name ? 'border-red-500' : ''}`} />
                 </div>
+                {errors.full_name && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.full_name[0]}</p>}
               </div>
 
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Father's Name *</Label>
                 <div className="relative group">
                   <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
-                  <Input name="fatherName" value={formData.fatherName} onChange={handleChange} required placeholder="FATHER'S NAME" className="pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10" />
+                  <Input name="father_name" value={formData.father_name} onChange={handleChange} required placeholder="FATHER'S NAME" className={`pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10 ${errors.father_name ? 'border-red-500' : ''}`} />
                 </div>
+                {errors.father_name && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.father_name[0]}</p>}
               </div>
 
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Mother's Name *</Label>
                 <div className="relative group">
                   <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
-                  <Input name="motherName" value={formData.motherName} onChange={handleChange} required placeholder="MOTHER'S NAME" className="pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10" />
+                  <Input name="mother_name" value={formData.mother_name} onChange={handleChange} required placeholder="MOTHER'S NAME" className={`pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10 ${errors.mother_name ? 'border-red-500' : ''}`} />
                 </div>
+                {errors.mother_name && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.mother_name[0]}</p>}
               </div>
 
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Email Address *</Label>
                 <div className="relative group">
                   <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
-                  <Input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder="EMAIL@EXAMPLE.COM" className="pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10" />
+                  <Input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder="EMAIL@EXAMPLE.COM" className={`pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10 ${errors.email ? 'border-red-500' : ''}`} />
                 </div>
+                {errors.email && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.email[0]}</p>}
               </div>
 
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Phone Number *</Label>
                 <div className="relative group">
                   <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
-                  <Input name="phone" value={formData.phone} onChange={handleChange} required placeholder="01XXXXXXXXX" className="pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10" />
+                  <Input name="phone" value={formData.phone} onChange={handleChange} required placeholder="01XXXXXXXXX" className={`pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10 ${errors.phone ? 'border-red-500' : ''}`} />
                 </div>
+                {errors.phone && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.phone[0]}</p>}
               </div>
 
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Nationality *</Label>
                 <div className="relative group">
                   <Globe className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
-                  <Input name="nationality" value={formData.nationality} onChange={handleChange} required placeholder="BANGLADESHI" className="pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10" />
+                  <Input name="nationality" value={formData.nationality} onChange={handleChange} required placeholder="BANGLADESHI" className={`pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10 ${errors.nationality ? 'border-red-500' : ''}`} />
                 </div>
+                {errors.nationality && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.nationality[0]}</p>}
               </div>
 
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Date of Birth *</Label>
                 <div className="relative group">
                   <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
-                  <Input type="date" name="birthDate" value={formData.birthDate} onChange={handleChange} required className="pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10" />
+                  <Input type="date" name="dob" value={formData.dob} onChange={handleChange} required className={`pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10 ${errors.dob ? 'border-red-500' : ''}`} />
                 </div>
+                {errors.dob && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.dob[0]}</p>}
               </div>
 
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Religion *</Label>
                 <div className="relative group">
                   <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
-                  <Input name="religion" value={formData.religion} onChange={handleChange} required placeholder="RELIGION" className="pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10" />
+                  <Input name="religion" value={formData.religion} onChange={handleChange} required placeholder="RELIGION" className={`pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10 ${errors.religion ? 'border-red-500' : ''}`} />
                 </div>
+                {errors.religion && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.religion[0]}</p>}
               </div>
 
               {/* Department Dropdown */}
@@ -206,13 +224,14 @@ export default function AdmissionPage() {
                   name="department" 
                   value={formData.department} 
                   onChange={handleChange}
-                  className="flex h-12 w-full rounded-xl border border-white/10 bg-slate-500/5 dark:bg-white/5 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
+                  className={`flex h-12 w-full rounded-xl border border-white/10 bg-slate-500/5 dark:bg-white/5 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer ${errors.department ? 'border-red-500' : ''}`}
                 >
                   <option className="bg-slate-900" value="COMPUTER SCIENCE">COMPUTER SCIENCE</option>
                   <option className="bg-slate-900" value="CIVIL TECHNOLOGY">CIVIL TECHNOLOGY</option>
                   <option className="bg-slate-900" value="ELECTRICAL">ELECTRICAL</option>
                   <option className="bg-slate-900" value="MECHANICAL">MECHANICAL</option>
                 </select>
+                {errors.department && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.department[0]}</p>}
               </div>
 
               {/* Action Button */}
