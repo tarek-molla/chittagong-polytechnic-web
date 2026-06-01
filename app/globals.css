@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card-border: var(--card-border);
+}
+
+@layer base {
+  :root {
+    --background: #f8fafc; 
+    --foreground: #0f172a;
+    --card-bg: linear-gradient(to bottom, #ffffff, #f1f5f9);
+    --card-border: #e2e8f0;
+  }
+  .dark {
+    --background: #020617;
+    --foreground: #f1f5f9;
+    --card-bg: linear-gradient(to bottom right, #0f172a, #020617);
+    --card-border: rgba(255, 255, 255, 0.08);
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    transition: background-color 0.5s ease;
+    overflow-x: hidden;
+  }
+}
+
+/* Fix for the Theme Switch */
+.ui-switch {
+  font-size: 10px;
+  position: relative;
+  display: inline-block;
+  width: 3.8em;
+  height: 2em;
+  cursor: pointer;
+}
+.ui-switch input { opacity: 0; width: 0; height: 0; }
+.ui-switch .slider {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #00a6ff; transition: 0.4s; border-radius: 30px;
+}
+.ui-switch .slider:before {
+  position: absolute; content: ""; height: 1.2em; width: 1.2em;
+  border-radius: 50%; left: 0.4em; bottom: 0.4em;
+  transition: 0.4s; box-shadow: inset 15px -4px 0px 15px #ffcf48;
+}
+.ui-switch input:checked + .slider { background-color: #1e293b; }
+.ui-switch input:checked + .slider:before {
+  transform: translateX(1.8em); box-shadow: inset 8px -4px 0px 0px #ffffff;
+}
+
+/* Animations - Smoothed out to prevent lagging */
+@keyframes cinematicZoom {
+  from { transform: scale(1); }
+  to { transform: scale(1.08); }
+}
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(20px); filter: blur(8px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+.animate-zoom { animation: cinematicZoom 15s ease-in-out infinite alternate; will-change: transform; }
+.animate-reveal { animation: reveal 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+.animate-float { animation: float 4s ease-in-out infinite; }
+/* Add to your existing globals.css */
+
+/* Subtle Nav Glow on Link Hover */
+.nav-glow {
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+}
+
+/* Add these to the animation section of your globals.css */
+
+@keyframes pulseSlow {
+  0%, 100% { 
+    opacity: 0.3; 
+    transform: scale(0.95); 
+    filter: blur(15px);
+  }
+  50% { 
+    opacity: 0.6; 
+    transform: scale(1.1); 
+    filter: blur(20px);
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulseSlow 4s ease-in-out infinite;
+  will-change: transform, opacity, filter;
+}
+
+/* Enhancing the dot glow */
+.text-blue-500 {
+  text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
