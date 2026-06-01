@@ -4,14 +4,13 @@ import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useState, useRef } from "react"
 import styled from "styled-components"
-import { GraduationCap, Calendar, Award, Building2, ArrowRight } from "lucide-react"
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import LoadingScreen from "../components/ui/loading-screen"
+import { GraduationCap, Calendar, Award, Building2 } from "lucide-react"
+import { Card, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
+import { Button } from "../components/ui/button"
 
 export default function HomePage() {
   const [isVisible, setIsVisible] = useState(false)
-  const sectionRef = useRef(null)
+  const sectionRef = useRef<HTMLDivElement>(null)
 
   const quickAccessCards = [
     { title: "Departments", description: "Technical units", icon: Building2, href: "/departments" },
@@ -21,16 +20,17 @@ export default function HomePage() {
   ]
 
   useEffect(() => {
+    const currentRef = sectionRef.current
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           setIsVisible(true)
-          observer.unobserve(entry.target)
+          if (currentRef) observer.unobserve(currentRef)
         }
       },
       { threshold: 0.1 }
     )
-    if (sectionRef.current) observer.observe(sectionRef.current)
+    if (currentRef) observer.observe(currentRef)
     return () => observer.disconnect()
   }, [])
 
