@@ -6,6 +6,7 @@ import { useEffect, useState, useRef } from "react"
 import { GraduationCap, Calendar, Award, Building2 } from "lucide-react"
 import { Card, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
 import { Button } from "../components/ui/button"
+import LoadingScreen from "../components/ui/loading-screen"
 
 export default function HomePage() {
   const [isVisible, setIsVisible] = useState(false)
@@ -36,6 +37,9 @@ export default function HomePage() {
   return (
     <div className="min-h-screen w-full transition-colors duration-500">
       
+      {/* INITIAL LOADING COVER */}
+      <LoadingScreen />
+
       {/* COMPACT HERO */}
       <section className="relative h-[600px] w-full flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
