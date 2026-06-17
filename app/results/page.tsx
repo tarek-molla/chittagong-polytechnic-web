@@ -1,407 +1,286 @@
 "use client"
 
-import type React from "react"
-import Image from "next/image"
-import { useState, useEffect } from "react"
-import styled, { createGlobalStyle } from "styled-components"
-import emailjs from "@emailjs/browser"
+import { useEffect, useState } from "react"
+import { 
+  User, Mail, Phone, Calendar, Globe, 
+  MapPin, GraduationCap, ArrowRight, Loader2, CheckCircle2 
+} from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Award, Search, Activity, Database, Send, Smile, Frown, Loader2, User, CheckCircle, AlertCircle, Printer, Download, MapPin } from "lucide-react"
+import { applyStudent } from "@/app/actions/student"
 
-const LocalFixStyles = createGlobalStyle`
-  [data-radix-popper-content-wrapper] {
-    z-index: 100 !important;
-  }
-  button, .redirect-btn {
-    position: relative;
-    overflow: hidden;
-  }
-  @media print {
-    .no-print { display: none !important; }
-    .print-only { display: block !important; }
-    body { background: white !important; color: black !important; padding: 0; margin: 0; }
-    .marksheet-card { 
-      background: white !important; 
-      color: black !important; 
-      border: 2px solid #000 !important;
-      box-shadow: none !important;
-      width: 100% !important;
-      position: absolute;
-      top: 0;
-      left: 0;
-    }
-    .text-white { color: black !important; }
-    .text-blue-400 { color: #2563eb !important; }
-    .bg-slate-950\/90 { background: white !important; }
-    .bg-blue-600 { background: #2563eb !important; -webkit-print-color-adjust: exact; }
-  }
-`;
-
-export default function ResultsPage() {
+export default function AdmissionPage() {
   const [mounted, setMounted] = useState(false)
   
-  // Database State
-  const [rollNo, setRollNo] = useState("")
-  const [semester, setSemester] = useState("5")
+  // Form State matching camelCase server actions input names
+  const [formData, setFormData] = useState({
+    fullName: "",
+    fatherName: "",
+    motherName: "",
+    email: "",
+    phone: "",
+    nationality: "BANGLADESHI",
+    dob: "",
+    religion: "",
+    department: "COMPUTER SCIENCE"
+  })
+
   const [loading, setLoading] = useState(false)
-  const [studentData, setStudentData] = useState<any>(null)
-  const [error, setError] = useState("")
+  const [status, setStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null)
+  const [errors, setErrors] = useState<Record<string, string[]>>({})
 
-  // Feedback State
-  const [feedbackText, setFeedbackText] = useState("")
-  const [isSendingFeedback, setIsSendingFeedback] = useState(false)
+  useEffect(() => setMounted(true), [])
 
-  useEffect(() => { 
-    setMounted(true) 
-  }, [])
-
-  const handleSearch = async () => {
-    if (!rollNo) {
-      setError("Please enter a valid roll number")
-      return
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value })
+    // Clear error state for the field when user alters it
+    if (errors[e.target.name]) {
+      const newErrors = { ...errors }
+      delete newErrors[e.target.name]
+      setErrors(newErrors)
     }
-    
+  }
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
     setLoading(true)
-    setError("")
-    setStudentData(null)
+    setStatus(null)
+    setErrors({})
 
     try {
-      const response = await fetch(`http://localhost/api/get_result.php?roll_no=${rollNo}&semester=${semester}`, {
-        method: 'GET',
-        mode: 'cors',
-      })
+      const data = new FormData(e.currentTarget)
+      const result = await applyStudent(null, data) // Passes null as prevState matching action structure
 
-      if (!response.ok) throw new Error("Server not responding")
-
-      const data = await response.json()
-      
-      if (data.success) {
-        setStudentData(data.data)
+      if (result.success) {
+        setStatus({ type: 'success', msg: result.message || "Success!" })
+        // Clear all input elements on success
+        setFormData({
+          fullName: "", fatherName: "", motherName: "", email: "",
+          phone: "", nationality: "BANGLADESHI", dob: "",
+          religion: "", department: "COMPUTER SCIENCE"
+        })
       } else {
-        setError(data.error || "No student found with this roll")
+        // Handle validation errors or database errors safely
+        if (result.errors) {
+          setErrors(result.errors as Record<string, string[]>)
+          setStatus({ type: 'error', msg: result.message || "Please correct the errors below." })
+        } else {
+          setStatus({ type: 'error', msg: result.message || "Submission failed" })
+        }
       }
-    } catch (err) {
-      setError("DATABASE CONNECTION FAILURE. IS XAMPP RUNNING?")
+    } catch (error) {
+      setStatus({ type: 'error', msg: "An unexpected error occurred." })
     } finally {
       setLoading(false)
-    }
-  }
-
-  const handlePrint = () => {
-    if (typeof window !== "undefined") {
-      window.print();
-    }
-  }
-
-  // Background Email Logic with UPGRADED Credentials
-  const handleFeedbackSubmit = async () => {
-    if (!feedbackText.trim()) return;
-    
-    setIsSendingFeedback(true);
-
-    const templateParams = {
-      message: feedbackText,
-      from_name: 'Portal User',
-      to_email: 'tarekmolla228@gmail.com',
-    };
-
-    try {
-      await emailjs.send(
-        'service_25hvb3t',      // Upgraded Service ID
-        'template_8fx6hqv',     // Upgraded Template ID
-        templateParams, 
-        'Bp7PNtQBBl6M1XPe-'     // Public Key
-      );
-      
-      alert("Feedback sent successfully!");
-      setFeedbackText("");
-    } catch (err) {
-      console.error('EmailJS Error:', err);
-      alert("Failed to send. Ensure you granted 'Send on your behalf' permissions in Gmail API settings.");
-    } finally {
-      setIsSendingFeedback(false);
     }
   }
 
   if (!mounted) return null
 
   return (
-    <div className="min-h-screen bg-background" suppressHydrationWarning>
-      <LocalFixStyles />
+    <div className="min-h-screen bg-background transition-colors duration-500 overflow-x-hidden">
       
-      {/* Cinematic Hero */}
-      <section className="relative h-[450px] w-full flex items-center justify-center overflow-hidden no-print">
+      {/* Cinematic Hero Section */}
+      <section className="relative h-[450px] w-full flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <div className="w-full h-full animate-pulse opacity-40">
-            <Image 
-              src="/images/ag0ilsyuoai-72tf0ezktwdothekvqkd.png" 
-              alt="Background" 
-              fill 
-              className="object-cover"
-              priority
+          <div className="w-full h-full scale-110 animate-slow-zoom will-change-transform">
+            <img
+              src="/images/ag0ilsxmrnaeudvnbrkymbql5ivwt0or.png"
+              alt="Background"
+              className="w-full h-full object-cover"
             />
           </div>
-          <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-background" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent z-10" />
+          <div className="absolute inset-0 bg-black/40 z-0" />
         </div>
         
-        <div className="relative container mx-auto px-4 text-center z-10">
-          <Award className="w-12 h-12 text-blue-500 mx-auto mb-6 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
+        <div className="relative container mx-auto px-4 text-center z-20 animate-in fade-in slide-in-from-bottom-8 duration-1000 ease-out">
+          <div className="inline-block p-3 rounded-2xl bg-blue-500/10 backdrop-blur-md mb-6 border border-blue-500/20 shadow-[0_0_20px_rgba(59,130,246,0.3)]">
+            <GraduationCap className="w-10 h-10 text-blue-500" />
+          </div>
+          
           <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-none mb-4">
-            <span className="text-white">Portal </span>
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-300 inline-block">Results</span>
+            <span className="text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">Online </span>
+            <span 
+              className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-300 inline-block"
+              style={{ filter: 'drop-shadow(0 0 15px rgba(59,130,246,0.6))' }}
+            >
+              Application
+            </span>
           </h1>
-          <p className="text-white/60 text-sm md:text-base max-w-xl mx-auto uppercase tracking-widest font-bold">
-            Internal Student Database Access
+
+          <p className="text-white/70 text-sm md:text-base max-w-xl mx-auto uppercase tracking-[0.4em] font-black italic">
+            Shape Your Tech Destiny
           </p>
         </div>
       </section>
 
-      <div className="container mx-auto px-4 -mt-20 relative z-20 pb-20">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-6xl mx-auto">
+      {/* Main Content Area */}
+      <section className="relative z-30 -mt-20 px-4 pb-20">
+        <Card className="w-full max-w-4xl mx-auto border-card-border bg-card-gradient backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] rounded-[2.5rem] overflow-hidden">
           
-          {/* Left Column (Utilities) */}
-          <div className="lg:col-span-4 space-y-6 no-print">
-            <StyledWrapper>
-              <div className="card">
-                <div className="content">
-                  <div className="back">
-                    <div className="back-content">
-                      <Activity className="w-10 h-10 text-blue-500 mb-2" />
-                      <strong className="text-lg uppercase font-black">BTEB Live</strong>
-                    </div>
-                  </div>
-                  <div className="front">
-                    <div className="front-content">
-                      <span className="badge">External Server</span>
-                      <div className="py-4">
-                        <p className="text-xl font-black text-white text-center">BTEB Official</p>
-                        <p className="text-[10px] text-blue-400/60 text-center uppercase tracking-widest font-bold mt-1">Status: Online</p>
-                      </div>
-                      <a href="https://btebresultszone.com/results" target="_blank" rel="noreferrer" className="redirect-btn">Connect Server</a>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </StyledWrapper>
-
-
-            {/* Feedback Card */}
-            <div className="grid grid-cols-6 gap-3 rounded-[35px] p-6 shadow-2xl border border-white/5 bg-slate-900/50 backdrop-blur-md">
-              <h1 className="text-center text-white text-2xl font-black col-span-6 mb-2">Feedback</h1>
-              <textarea 
-                value={feedbackText}
-                onChange={(e) => setFeedbackText(e.target.value)}
-                className="col-span-6 h-24 resize-none outline-none rounded-2xl p-4 text-sm border border-white/10 bg-black/20 text-white placeholder:text-white/20 focus:border-blue-500 transition-all" 
-                placeholder="Notice an error?" 
-              />
-              <div className="col-span-6 grid grid-cols-6 gap-3 pt-1">
-                <button className="col-span-1 flex justify-center items-center rounded-xl p-3 border border-white/10 bg-white/5 hover:bg-blue-500/10 transition-colors">
-                  <Smile className="w-5 h-5 text-white/50" />
-                </button>
-                <button className="col-span-1 flex justify-center items-center rounded-xl p-3 border border-white/10 bg-white/5 hover:bg-blue-500/10 transition-colors">
-                  <Frown className="w-5 h-5 text-white/50" />
-                </button>
-                <span className="col-span-1" />
-                <button 
-                  onClick={handleFeedbackSubmit}
-                  disabled={isSendingFeedback}
-                  className="col-span-3 flex items-center justify-center gap-2 rounded-xl p-3 bg-blue-600 text-white shadow-lg active:scale-95 transition-all disabled:opacity-50"
-                >
-                  {isSendingFeedback ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
-                  <span className="font-black uppercase text-[10px] tracking-widest">
-                    {isSendingFeedback ? "Sending" : "Submit"}
-                  </span>
-                </button>
-              </div>
+          <CardHeader className="relative overflow-hidden bg-blue-600 p-6 text-center text-white">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-shimmer" />
+            <div className="relative z-10">
+              <CardTitle className="text-2xl font-black tracking-tighter uppercase italic">
+                Student Information Form
+              </CardTitle>
+              <p className="text-blue-100 text-[10px] font-black uppercase tracking-widest mt-1">Official Enrollment 2026</p>
             </div>
-          </div>
-
-          {/* Right Column (Search & Results) */}
-          <div className="lg:col-span-8 space-y-6">
-            <Card className="border-white/5 shadow-2xl rounded-[40px] overflow-hidden bg-slate-900/40 backdrop-blur-md no-print">
-              <CardHeader className="p-10 pb-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-4 bg-blue-600 rounded-2xl text-white shadow-xl shadow-blue-600/20">
-                    <Database className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-3xl font-black uppercase tracking-tight text-white">Internal Search</CardTitle>
-                    <p className="text-xs font-bold uppercase tracking-widest text-blue-500">Query: poly_db_v2</p>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-10 pt-0">
-                <div className="space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-3">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-4">Department</Label>
-                      <Select defaultValue="CST">
-                        <SelectTrigger className="h-14 border-2 border-white/10 rounded-full px-8 text-sm font-bold bg-black/20 text-white focus:border-blue-500 transition-all">
-                          <SelectValue placeholder="Select Technology" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-slate-900 border-white/10 text-white">
-                          <SelectItem value="CST">Computer Science</SelectItem>
-                          <SelectItem value="ENT">Electronics</SelectItem>
-                          <SelectItem value="ELT">Electrical</SelectItem>
-                          <SelectItem value="CIV">Civil Technology</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-3">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-4">Roll Number</Label>
-                      <Input 
-                        value={rollNo}
-                        onChange={(e) => setRollNo(e.target.value)}
-                        className="h-14 border-2 border-white/10 rounded-full px-8 text-sm font-bold bg-black/20 text-white focus:border-blue-500 transition-all" 
-                        placeholder="e.g. 787784" 
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-4">Semester</Label>
-                    <Select value={semester} onValueChange={setSemester}>
-                      <SelectTrigger className="h-14 border-2 border-white/10 rounded-full px-8 text-sm font-bold bg-black/20 text-white focus:border-blue-500 transition-all">
-                        <SelectValue placeholder="Select Semester" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-900 border-white/10 text-white">
-                        {[1,2,3,4,5,6,7,8].map(s => <SelectItem key={s} value={s.toString()}>{s}th Semester</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button 
-                    onClick={handleSearch}
-                    disabled={loading}
-                    className="w-full bg-blue-600 hover:bg-blue-700 h-16 rounded-full text-sm font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-600/30 active:scale-[0.98] transition-all text-white border-none"
-                  >
-                    {loading ? <Loader2 className="animate-spin mr-2 w-5 h-5" /> : <Search className="w-5 h-5 mr-3" />}
-                    {loading ? "Accessing Database..." : "Fetch Marksheet"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* RESULT CARD */}
-            {studentData && (
-              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <Card className="marksheet-card border-blue-500/50 bg-blue-600/10 rounded-[40px] overflow-hidden p-1 shadow-2xl">
-                  <div className="bg-slate-950/90 backdrop-blur-xl rounded-[38px] p-8 border border-white/5">
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-                      <div className="flex items-center gap-6">
-                        <div className="w-20 h-20 rounded-3xl bg-blue-600 flex items-center justify-center shadow-lg">
-                          <User className="w-10 h-10 text-white" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                             <span className="px-2 py-0.5 rounded-md bg-blue-600 text-[10px] font-bold text-white uppercase tracking-tighter">Verified Result</span>
-                             <CheckCircle className="w-3 h-3 text-blue-400" />
-                          </div>
-                          <h2 className="text-3xl font-black uppercase text-white leading-none mb-1">{studentData.student_name}</h2>
-                          <p className="text-sm font-bold text-blue-400 uppercase tracking-widest">Roll: {studentData.roll_no}</p>
-                        </div>
-                      </div>
-                      <div className="text-center md:text-right">
-                         <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-2">Subject: {studentData.subject}</p>
-                         <div className="flex items-baseline gap-2 justify-center md:justify-end leading-none">
-                            <span className="text-6xl font-black text-white">{studentData.marks}</span>
-                            <span className="text-lg font-bold text-blue-500/50">/ 100</span>
-                         </div>
-                      </div>
-                    </div>
-                    
-                    <div className="mt-8 pt-6 border-t border-white/5 flex flex-wrap gap-4 no-print">
-                        <Button 
-                          onClick={handlePrint} 
-                          className="flex-1 md:flex-none rounded-xl bg-blue-600 text-white hover:bg-blue-700 font-bold uppercase tracking-widest text-[10px] h-12 px-8 shadow-lg shadow-blue-600/20 transition-all active:scale-95"
-                        >
-                          <Printer className="w-4 h-4 mr-2" /> Print Marksheet
-                        </Button>
-                        <Button 
-                          onClick={handlePrint} 
-                          variant="outline"
-                          className="flex-1 md:flex-none rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 font-bold uppercase tracking-widest text-[10px] h-12 px-8 transition-all active:scale-95"
-                        >
-                          <Download className="w-4 h-4 mr-2" /> Download PDF
-                        </Button>
-                    </div>
-                  </div>
-                </Card>
+          </CardHeader>
+          
+          <CardContent className="p-6 md:p-10">
+            {/* Status Notification banner */}
+            {status && (
+              <div className={`mb-8 p-4 rounded-2xl border flex items-center gap-3 animate-in fade-in zoom-in duration-300 ${
+                status.type === 'success' ? 'bg-green-500/10 border-green-500/20 text-green-500' : 'bg-red-500/10 border-red-500/20 text-red-500'
+              }`}>
+                {status.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <Loader2 className="w-5 h-5 animate-spin" />}
+                <p className="font-black uppercase text-xs tracking-widest">{status.msg}</p>
               </div>
             )}
-          </div>
-        </div>
-      </div>
+
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-6">
+              
+              {/* Full Name input configuration */}
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Full Name *</Label>
+                <div className="relative group">
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
+                  <Input name="fullName" value={formData.fullName} onChange={handleChange} required placeholder="JOHN DOE" className={`pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10 ${errors.full_name ? 'border-red-500' : ''}`} />
+                </div>
+                {errors.full_name && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.full_name[0]}</p>}
+              </div>
+
+              {/* Father Name input configuration */}
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Father's Name *</Label>
+                <div className="relative group">
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
+                  <Input name="fatherName" value={formData.fatherName} onChange={handleChange} required placeholder="FATHER'S NAME" className={`pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10 ${errors.father_name ? 'border-red-500' : ''}`} />
+                </div>
+                {errors.father_name && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.father_name[0]}</p>}
+              </div>
+
+              {/* Mother Name input configuration */}
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Mother's Name *</Label>
+                <div className="relative group">
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
+                  <Input name="motherName" value={formData.motherName} onChange={handleChange} required placeholder="MOTHER'S NAME" className={`pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10 ${errors.mother_name ? 'border-red-500' : ''}`} />
+                </div>
+                {errors.mother_name && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.mother_name[0]}</p>}
+              </div>
+
+              {/* Email Address input configuration */}
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Email Address *</Label>
+                <div className="relative group">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
+                  <Input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder="EMAIL@EXAMPLE.COM" className={`pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10 ${errors.email ? 'border-red-500' : ''}`} />
+                </div>
+                {errors.email && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.email[0]}</p>}
+              </div>
+
+              {/* Phone Number input configuration */}
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Phone Number *</Label>
+                <div className="relative group">
+                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
+                  <Input name="phone" value={formData.phone} onChange={handleChange} required placeholder="01XXXXXXXXX" className={`pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10 ${errors.phone ? 'border-red-500' : ''}`} />
+                </div>
+                {errors.phone && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.phone[0]}</p>}
+              </div>
+
+              {/* Nationality input configuration */}
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Nationality *</Label>
+                <div className="relative group">
+                  <Globe className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
+                  <Input name="nationality" value={formData.nationality} onChange={handleChange} required placeholder="BANGLADESHI" className={`pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10 ${errors.nationality ? 'border-red-500' : ''}`} />
+                </div>
+                {errors.nationality && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.nationality[0]}</p>}
+              </div>
+
+              {/* Date of Birth input configuration */}
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Date of Birth *</Label>
+                <div className="relative group">
+                  <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
+                  <Input type="date" name="dob" value={formData.dob} onChange={handleChange} required className={`pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10 ${errors.dob ? 'border-red-500' : ''}`} />
+                </div>
+                {errors.dob && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.dob[0]}</p>}
+              </div>
+
+              {/* Religion input configuration */}
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Religion *</Label>
+                <div className="relative group">
+                  <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
+                  <Input name="religion" value={formData.religion} onChange={handleChange} required placeholder="RELIGION" className={`pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10 ${errors.religion ? 'border-red-500' : ''}`} />
+                </div>
+                {errors.religion && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.religion[0]}</p>}
+              </div>
+
+              {/* Fully Extended Department Selection Menu */}
+              <div className="space-y-1.5 md:col-span-1">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Department Choice *</Label>
+                <select 
+                  name="department" 
+                  value={formData.department} 
+                  onChange={handleChange}
+                  className={`flex h-12 w-full rounded-xl border border-white/10 bg-slate-500/5 dark:bg-white/5 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer ${errors.department ? 'border-red-500' : ''}`}
+                >
+                  <option className="bg-slate-900" value="COMPUTER SCIENCE">COMPUTER SCIENCE</option>
+                  <option className="bg-slate-900" value="CIVIL TECHNOLOGY">CIVIL TECHNOLOGY</option>
+                  <option className="bg-slate-900" value="ELECTRICAL">ELECTRICAL</option>
+                  <option className="bg-slate-900" value="MECHANICAL">MECHANICAL</option>
+                  <option className="bg-slate-900" value="POWER">POWER</option>
+                  <option className="bg-slate-900" value="ELECTRONICS">ELECTRONICS</option>
+                  <option className="bg-slate-900" value="ENVIRONMENTAL">ENVIRONMENTAL</option>
+                </select>
+                {errors.department && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.department[0]}</p>}
+              </div>
+
+              {/* Action Submit Button Component */}
+              <div className="md:col-span-3 pt-6 mt-4 border-t border-white/5">
+                <Button 
+                  type="submit" 
+                  disabled={loading}
+                  className="w-full h-14 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-[0.3em] shadow-[0_15px_30px_-10px_rgba(37,99,235,0.5)] transition-all active:scale-95 group"
+                >
+                  {loading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      Finalize Submission 
+                      <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </section>
+
+      <style jsx global>{`
+        @keyframes slow-zoom {
+          from { transform: scale(1); }
+          to { transform: scale(1.15); }
+        }
+        @keyframes shimmer {
+          100% { transform: translateX(100%); }
+        }
+        .animate-slow-zoom {
+          animation: slow-zoom 20s linear infinite alternate;
+        }
+        .animate-shimmer {
+          animation: shimmer 2.5s infinite;
+        }
+      `}</style>
     </div>
   )
 }
-
-const StyledWrapper = styled.div`
-  .card { width: 100%; height: 240px; perspective: 1000px; }
-  .content {
-    width: 100%; height: 100%; transform-style: preserve-3d;
-    transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
-    border-radius: 35px;
-    position: relative;
-  }
-  .card:hover .content { transform: rotateY(180deg); }
-  .front, .back { 
-    position: absolute; 
-    width: 100%; 
-    height: 100%; 
-    backface-visibility: hidden; 
-    border-radius: 35px; 
-  }
-  .back { 
-    background: #0f172a; 
-    display: flex; 
-    justify-content: center; 
-    align-items: center; 
-    overflow: hidden; 
-    border: 1px solid rgba(255,255,255,0.1); 
-    z-index: 2;
-    pointer-events: auto; /* Active for hover trigger */
-  }
-  /* Fix: Backside must not block front side clicks when flipped */
-  .card:hover .back {
-    pointer-events: none;
-  }
-  .back::before { position: absolute; content: ''; width: 40%; height: 200%; background: linear-gradient(90deg, transparent, #3b82f6, transparent); animation: rotate 4s infinite linear; }
-  .back-content { position: absolute; width: 98%; height: 98%; background: #0f172a; border-radius: 33px; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1; }
-  .front { 
-    transform: rotateY(180deg); 
-    background: #020617; 
-    padding: 25px; 
-    display: flex; 
-    flex-direction: column; 
-    justify-content: space-between; 
-    border: 1px solid rgba(255,255,255,0.1);
-    z-index: 1;
-    pointer-events: none; /* Ignore clicks while hidden */
-  }
-  /* Fix: Front side becomes interactive only when flipped */
-  .card:hover .front {
-    z-index: 5;
-    pointer-events: auto;
-  }
-  .front-content { position: relative; z-index: 1; display: flex; flex-direction: column; justify-content: space-between; height: 100%; }
-  .badge { background: #1e293b; border: 1px solid #334155; color: #60a5fa; padding: 4px 12px; border-radius: 10px; font-size: 9px; font-weight: 900; width: fit-content; text-transform: uppercase; margin: 0 auto; }
-  .redirect-btn { 
-    display: block; 
-    width: 100%; 
-    padding: 12px; 
-    background: #2563eb; 
-    color: white; 
-    text-align: center; 
-    font-size: 11px; 
-    font-weight: 900; 
-    border-radius: 15px; 
-    text-transform: uppercase; 
-    text-decoration: none;
-    cursor: pointer;
-  }
-  .redirect-btn:hover { background: #1d4ed8; }
-  @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-`;
