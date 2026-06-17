@@ -22,23 +22,44 @@ const LocalFixStyles = createGlobalStyle`
     overflow: hidden;
   }
   @media print {
-    .no-print { display: none !important; }
-    .print-only { display: block !important; }
-    body { background: white !important; color: black !important; padding: 0; margin: 0; }
+    /* Completely isolate and hide global headers, wrappers, and side modules */
+    html, body {
+      background: #ffffff !important;
+      color: #000000 !important;
+      width: 100%;
+      height: auto;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    
+    /* Target and hide every layout element except the results template card container */
+    nav, header, footer, section, .no-print, [class*="header"], [class*="navbar"] {
+      display: none !important;
+      aria-hidden: true;
+    }
+    
+    /* Clean up structural print presentation boundaries */
     .marksheet-card { 
-      background: white !important; 
-      color: black !important; 
-      border: 2px solid #000 !important;
+      background: #ffffff !important; 
+      color: #000000 !important; 
+      border: 1px solid #e2e8f0 !important;
       box-shadow: none !important;
       width: 100% !important;
-      position: absolute;
-      top: 0;
-      left: 0;
+      max-width: 100% !important;
+      position: relative !important;
+      top: 0 !important;
+      left: 0 !important;
+      margin: 20px auto !important;
+      padding: 24px !important;
+      display: block !important;
+      page-break-inside: avoid;
     }
-    .text-white { color: black !important; }
-    .text-blue-400 { color: #2563eb !important; }
-    .bg-slate-950\/90 { background: white !important; }
-    .bg-blue-600 { background: #2563eb !important; -webkit-print-color-adjust: exact; }
+    
+    /* Enforce pure monochrome text contrasts for high quality outputs */
+    .text-white, h2, span, p { color: #000000 !important; }
+    .text-blue-400, .text-blue-500 { color: #1e40af !important; }
+    .bg-slate-950\\/90, .bg-slate-900\\/40 { background: #ffffff !important; }
+    .bg-blue-600 { background: #1e40af !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
 `;
 
@@ -72,7 +93,6 @@ export default function ResultsPage() {
     setStudentData(null)
 
     try {
-      // Securely routes your parameters over the updated backend action hook
       const response = await getStudentResult(rollNo, department, semester)
 
       if (response.success) {
@@ -321,13 +341,13 @@ export default function ResultsPage() {
                   <div className="bg-slate-950/90 backdrop-blur-xl rounded-[38px] p-8 border border-white/5">
                     <div className="flex flex-col md:flex-row justify-between items-center gap-6">
                       <div className="flex items-center gap-6">
-                        <div className="w-20 h-20 rounded-3xl bg-blue-600 flex items-center justify-center shadow-lg">
+                        <div className="w-20 h-20 rounded-3xl bg-blue-600 flex items-center justify-center shadow-lg no-print">
                           <User className="w-10 h-10 text-white" />
                         </div>
                         <div>
                           <div className="flex items-center gap-2 mb-1">
-                             <span className="px-2 py-0.5 rounded-md bg-blue-600 text-[10px] font-bold text-white uppercase tracking-tighter">Verified Result</span>
-                             <CheckCircle className="w-3 h-3 text-blue-400" />
+                             <span className="px-2 py-0.5 rounded-md bg-blue-600 text-[10px] font-bold text-white uppercase tracking-tighter no-print">Verified Result</span>
+                             <CheckCircle className="w-3 h-3 text-blue-400 no-print" />
                           </div>
                           <h2 className="text-3xl font-black uppercase text-white leading-none mb-1">{studentData.student_name}</h2>
                           <p className="text-sm font-bold text-blue-400 uppercase tracking-widest">Roll: {studentData.roll_num} | {studentData.department}</p>
@@ -337,7 +357,7 @@ export default function ResultsPage() {
                          <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-2">Semester Ranking: {studentData.semester}</p>
                          <div className="flex items-baseline gap-2 justify-center md:justify-end leading-none">
                             <span className="text-6xl font-black text-white">{studentData.gpa ? Number(studentData.gpa).toFixed(2) : "0.00"}</span>
-                            <span className="text-lg font-bold text-blue-500/50">GPA</span>
+                            <span className="text-lg font-bold text-blue-500/50 binds-gpa">GPA</span>
                          </div>
                       </div>
                     </div>
