@@ -23,28 +23,28 @@ const LocalFixStyles = createGlobalStyle`
   }
   
   @media print {
-    /* Step 1: Hide everything globally across the entire application */
-    html, body, nav, header, footer, sidebar, section, main, .no-print,
-    [class*="navbar"], [class*="header"], [class*="footer"], [class*="layout"] {
-      display: none !important;
-      opacity: 0 !important;
+    /* Step 1: Hide all items inside the body layout by default using visibility */
+    body * {
       visibility: hidden !important;
-      height: 0 !important;
+    }
+
+    /* Step 2: Make only our target results block and its contents visible */
+    .print-target-wrapper,
+    .print-target-wrapper * {
+      visibility: visible !important;
+    }
+
+    /* Step 3: Shift the visible print wrapper block up to the absolute top-left boundary */
+    .print-target-wrapper {
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
       margin: 0 !important;
       padding: 0 !important;
     }
 
-    /* Step 2: Resurrect only the marksheet card container and its children */
-    .print-target-wrapper,
-    .print-target-wrapper *,
-    .marksheet-card,
-    .marksheet-card * {
-      display: block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-    }
-
-    /* Step 3: Format the page layout perfectly for clean A4 printing */
+    /* Step 4: Enforce crisp high-contrast text and paper sizing constraints */
     body {
       background: #ffffff !important;
       color: #000000 !important;
@@ -53,21 +53,16 @@ const LocalFixStyles = createGlobalStyle`
     }
 
     .marksheet-card {
-      position: absolute !important;
-      top: 0 !important;
-      left: 0 !important;
-      width: 100% !important;
-      max-width: 100% !important;
       border: 2px solid #000000 !important;
       background: #ffffff !important;
-      padding: 32px !important;
-      margin: 0 !important;
-      border-radius: 20px !important;
+      padding: 40px !important;
+      border-radius: 24px !important;
       box-shadow: none !important;
+      width: 100% !important;
+      display: block !important;
     }
 
-    /* Step 4: Ensure pure high-contrast black ink formatting */
-    .marksheet-card text,
+    /* Convert specific dark-theme styling components for bright physical pages */
     .marksheet-card h2,
     .marksheet-card span,
     .marksheet-card p,
