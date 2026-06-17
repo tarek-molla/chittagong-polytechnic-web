@@ -12,7 +12,7 @@ export async function getStudentResult(rollNum: string, department: string, seme
   }
 
   try {
-    // Exact structural query check returning an array instead of forcing a single model object crash
+    // Primary query check matching strict parameters
     const { data, error } = await supabase
       .from('results')
       .select('*')
@@ -25,9 +25,8 @@ export async function getStudentResult(rollNum: string, department: string, seme
       return { success: false, message: `Database Error: ${error.message}` }
     }
 
-    // Process array boundaries safely manually
     if (!data || data.length === 0) {
-      // Flexible loose match lookup handling trailing whitespaces seamlessly
+      // Fallback loose match lookup handling any accidental trailing whitespaces
       const { data: looseData, error: looseError } = await supabase
         .from('results')
         .select('*')
@@ -40,10 +39,10 @@ export async function getStudentResult(rollNum: string, department: string, seme
         return { success: false, message: 'No certified marksheet found matching these structural parameters.' }
       }
       
-      return { success: true, data: looseData[0] } // Safely grab the first matched record
+      return { success: true, data: looseData[0] }
     }
 
-    return { success: true, data: data[0] } // Safely grab the first matched record
+    return { success: true, data: data[0] }
   } catch (err) {
     console.error('Unexpected action error:', err)
     return { success: false, message: 'An unexpected system error occurred.' }
