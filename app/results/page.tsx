@@ -21,63 +21,73 @@ const LocalFixStyles = createGlobalStyle`
     position: relative;
     overflow: hidden;
   }
+  
   @media print {
-    /* Completely force layout backgrounds off and strip container boundaries */
-    html, body, main, #__next, div[id^="radix"] {
-      background: #ffffff !important;
-      color: #000000 !important;
-      width: 100% !important;
-      height: auto !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      box-shadow: none !important;
-    }
-    
-    /* Strict global wipeout of all navigation links, floating headers, layout footers, and sidebars */
-    nav, header, footer, section, .no-print, 
-    [class*="header"], [class*="navbar"], [class*="footer"], [class*="navigation"] {
+    /* Step 1: Hide everything globally across the entire application */
+    html, body, nav, header, footer, sidebar, section, main, .no-print,
+    [class*="navbar"], [class*="header"], [class*="footer"], [class*="layout"] {
       display: none !important;
       opacity: 0 !important;
       visibility: hidden !important;
       height: 0 !important;
-      width: 0 !important;
       margin: 0 !important;
       padding: 0 !important;
     }
-    
-    /* Remap report marksheet container architecture onto pure structural print spaces */
-    .marksheet-card { 
-      background: #ffffff !important; 
-      color: #000000 !important; 
-      border: 2px solid #1e293b !important;
-      box-shadow: none !important;
-      width: 100% !important;
-      max-width: 100% !important;
+
+    /* Step 2: Resurrect only the marksheet card container and its children */
+    .print-target-wrapper,
+    .print-target-wrapper *,
+    .marksheet-card,
+    .marksheet-card * {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+
+    /* Step 3: Format the page layout perfectly for clean A4 printing */
+    body {
+      background: #ffffff !important;
+      color: #000000 !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    .marksheet-card {
       position: absolute !important;
       top: 0 !important;
       left: 0 !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      border: 2px solid #000000 !important;
+      background: #ffffff !important;
+      padding: 32px !important;
       margin: 0 !important;
-      padding: 40px !important;
-      display: block !important;
-      page-break-inside: avoid;
+      border-radius: 20px !important;
+      box-shadow: none !important;
     }
-    
-    /* Enforce maximum black-on-white text readability metrics */
-    .text-white, h2, span, p, label { 
-      color: #000000 !important; 
+
+    /* Step 4: Ensure pure high-contrast black ink formatting */
+    .marksheet-card text,
+    .marksheet-card h2,
+    .marksheet-card span,
+    .marksheet-card p,
+    .marksheet-card div {
+      color: #000000 !important;
     }
-    .text-blue-400, .text-blue-500, .text-cyan-400 { 
-      color: #1e40af !important; 
-      font-weight: bold !important;
+
+    .text-blue-400, .text-blue-500, .text-cyan-400, .binds-gpa {
+      color: #1e40af !important;
+      font-weight: 900 !important;
     }
-    .bg-slate-950\\/90, .bg-slate-900\\/40, .bg-blue-600\\/10 { 
-      background: #ffffff !important; 
+
+    .bg-slate-950\\/90, .bg-slate-900\\/40, .bg-blue-600\\/10 {
+      background: #f8fafc !important;
+      border: 1px solid #cbd5e1 !important;
     }
-    .bg-blue-600 { 
-      background: #1e40af !important; 
+
+    .bg-blue-600 {
+      background: #1e40af !important;
       color: #ffffff !important;
-      -webkit-print-color-adjust: exact; 
-      print-color-adjust: exact; 
     }
   }
 `;
@@ -353,9 +363,9 @@ export default function ResultsPage() {
               </div>
             )}
 
-            {/* RESULT CARD */}
+            {/* RESULT CARD WRAPPER TO FORCE ISOLATION ON PRINT */}
             {studentData && (
-              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="print-target-wrapper animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <Card className="marksheet-card border-blue-500/50 bg-blue-600/10 rounded-[40px] overflow-hidden p-1 shadow-2xl">
                   <div className="bg-slate-950/90 backdrop-blur-xl rounded-[38px] p-8 border border-white/5">
                     <div className="flex flex-col md:flex-row justify-between items-center gap-6">
@@ -364,11 +374,10 @@ export default function ResultsPage() {
                           <User className="w-10 h-10 text-white" />
                         </div>
                         <div>
-                          <div className="flex items-center gap-2 mb-1">
-                             <span className="px-2 py-0.5 rounded-md bg-blue-600 text-[10px] font-bold text-white uppercase tracking-tighter no-print">Verified Result</span>
-                             <CheckCircle className="w-3 h-3 text-blue-400 no-print" />
+                          <div className="flex items-center gap-2 mb-1 no-print">
+                             <span className="px-2 py-0.5 rounded-md bg-blue-600 text-[10px] font-bold text-white uppercase tracking-tighter">Verified Result</span>
+                             <CheckCircle className="w-3 h-3 text-blue-400" />
                           </div>
-                          {/* Secure Fallback Injection logic for string parameters */}
                           <h2 className="text-3xl font-black uppercase text-white leading-none mb-1">
                             {studentData.student_name || "STUDENT RECORD"}
                           </h2>
