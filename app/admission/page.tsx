@@ -14,11 +14,11 @@ import { applyStudent } from "@/app/actions/student"
 export default function AdmissionPage() {
   const [mounted, setMounted] = useState(false)
   
-  // Form State
+  // Form State matching camelCase server actions input names
   const [formData, setFormData] = useState({
-    full_name: "",
-    father_name: "",
-    mother_name: "",
+    fullName: "",
+    fatherName: "",
+    motherName: "",
     email: "",
     phone: "",
     nationality: "BANGLADESHI",
@@ -35,7 +35,7 @@ export default function AdmissionPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
-    // Clear error for the field when user changes it
+    // Clear error state for the field when user alters it
     if (errors[e.target.name]) {
       const newErrors = { ...errors }
       delete newErrors[e.target.name]
@@ -51,21 +51,21 @@ export default function AdmissionPage() {
 
     try {
       const data = new FormData(e.currentTarget)
-      const result = await applyStudent(data)
+      const result = await applyStudent(null, data) // Passes null as prevState matching action structure
 
       if (result.success) {
         setStatus({ type: 'success', msg: result.message || "Success!" })
-        // Optional: Clear form
+        // Clear all input elements on success
         setFormData({
-          full_name: "", father_name: "", mother_name: "", email: "",
+          fullName: "", fatherName: "", motherName: "", email: "",
           phone: "", nationality: "BANGLADESHI", dob: "",
           religion: "", department: "COMPUTER SCIENCE"
         })
       } else {
-        // Handle validation errors or database errors
+        // Handle validation errors or database errors safely
         if (result.errors) {
           setErrors(result.errors as Record<string, string[]>)
-          setStatus({ type: 'error', msg: "Please correct the errors below." })
+          setStatus({ type: 'error', msg: result.message || "Please correct the errors below." })
         } else {
           setStatus({ type: 'error', msg: result.message || "Submission failed" })
         }
@@ -132,46 +132,49 @@ export default function AdmissionPage() {
           </CardHeader>
           
           <CardContent className="p-6 md:p-10">
-            {/* Status Notification */}
+            {/* Status Notification banner */}
             {status && (
               <div className={`mb-8 p-4 rounded-2xl border flex items-center gap-3 animate-in fade-in zoom-in duration-300 ${
                 status.type === 'success' ? 'bg-green-500/10 border-green-500/20 text-green-500' : 'bg-red-500/10 border-red-500/20 text-red-500'
               }`}>
-                {status.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <Loader2 className="w-5 h-5" />}
+                {status.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <Loader2 className="w-5 h-5 animate-spin" />}
                 <p className="font-black uppercase text-xs tracking-widest">{status.msg}</p>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-6">
               
-              {/* Manual Fields for better binding */}
+              {/* Full Name input configuration */}
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Full Name *</Label>
                 <div className="relative group">
                   <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
-                  <Input name="full_name" value={formData.full_name} onChange={handleChange} required placeholder="JOHN DOE" className={`pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10 ${errors.full_name ? 'border-red-500' : ''}`} />
+                  <Input name="fullName" value={formData.fullName} onChange={handleChange} required placeholder="JOHN DOE" className={`pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10 ${errors.full_name ? 'border-red-500' : ''}`} />
                 </div>
                 {errors.full_name && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.full_name[0]}</p>}
               </div>
 
+              {/* Father Name input configuration */}
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Father's Name *</Label>
                 <div className="relative group">
                   <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
-                  <Input name="father_name" value={formData.father_name} onChange={handleChange} required placeholder="FATHER'S NAME" className={`pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10 ${errors.father_name ? 'border-red-500' : ''}`} />
+                  <Input name="fatherName" value={formData.fatherName} onChange={handleChange} required placeholder="FATHER'S NAME" className={`pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10 ${errors.father_name ? 'border-red-500' : ''}`} />
                 </div>
                 {errors.father_name && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.father_name[0]}</p>}
               </div>
 
+              {/* Mother Name input configuration */}
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Mother's Name *</Label>
                 <div className="relative group">
                   <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
-                  <Input name="mother_name" value={formData.mother_name} onChange={handleChange} required placeholder="MOTHER'S NAME" className={`pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10 ${errors.mother_name ? 'border-red-500' : ''}`} />
+                  <Input name="motherName" value={formData.motherName} onChange={handleChange} required placeholder="MOTHER'S NAME" className={`pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10 ${errors.mother_name ? 'border-red-500' : ''}`} />
                 </div>
                 {errors.mother_name && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.mother_name[0]}</p>}
               </div>
 
+              {/* Email Address input configuration */}
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Email Address *</Label>
                 <div className="relative group">
@@ -181,6 +184,7 @@ export default function AdmissionPage() {
                 {errors.email && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.email[0]}</p>}
               </div>
 
+              {/* Phone Number input configuration */}
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Phone Number *</Label>
                 <div className="relative group">
@@ -190,6 +194,7 @@ export default function AdmissionPage() {
                 {errors.phone && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.phone[0]}</p>}
               </div>
 
+              {/* Nationality input configuration */}
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Nationality *</Label>
                 <div className="relative group">
@@ -199,6 +204,7 @@ export default function AdmissionPage() {
                 {errors.nationality && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.nationality[0]}</p>}
               </div>
 
+              {/* Date of Birth input configuration */}
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Date of Birth *</Label>
                 <div className="relative group">
@@ -208,6 +214,7 @@ export default function AdmissionPage() {
                 {errors.dob && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.dob[0]}</p>}
               </div>
 
+              {/* Religion input configuration */}
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Religion *</Label>
                 <div className="relative group">
@@ -217,7 +224,7 @@ export default function AdmissionPage() {
                 {errors.religion && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.religion[0]}</p>}
               </div>
 
-              {/* Department Dropdown */}
+              {/* Fully Extended Department Selection Menu */}
               <div className="space-y-1.5 md:col-span-1">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Department Choice *</Label>
                 <select 
@@ -230,11 +237,14 @@ export default function AdmissionPage() {
                   <option className="bg-slate-900" value="CIVIL TECHNOLOGY">CIVIL TECHNOLOGY</option>
                   <option className="bg-slate-900" value="ELECTRICAL">ELECTRICAL</option>
                   <option className="bg-slate-900" value="MECHANICAL">MECHANICAL</option>
+                  <option className="bg-slate-900" value="POWER">POWER</option>
+                  <option className="bg-slate-900" value="ELECTRONICS">ELECTRONICS</option>
+                  <option className="bg-slate-900" value="ENVIRONMENTAL">ENVIRONMENTAL</option>
                 </select>
                 {errors.department && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.department[0]}</p>}
               </div>
 
-              {/* Action Button */}
+              {/* Action Submit Button Component */}
               <div className="md:col-span-3 pt-6 mt-4 border-t border-white/5">
                 <Button 
                   type="submit" 
