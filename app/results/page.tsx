@@ -72,12 +72,17 @@ export default function ResultsPage() {
     setStudentData(null)
 
     try {
+      // Clean target variables to eliminate trailing or leading spaces
+      const targetRoll = rollNo.trim()
+      const targetDept = department.trim()
+      const targetSem = semester.trim()
+
       const { data, error: dbError } = await supabase
         .from('results')
         .select('*')
-        .eq('roll_num', rollNo.trim())
-        .eq('department', department)
-        .eq('semester', semester)
+        .eq('roll_num', targetRoll)
+        .eq('department', targetDept)
+        .eq('semester', targetSem)
         .single()
 
       if (dbError) {
@@ -102,7 +107,6 @@ export default function ResultsPage() {
     }
   }
 
-  // Handle dynamic emotional emoji appending inside feedback textarea
   const handleEmojiClick = (emojiType: "smile" | "frown") => {
     const visualTag = emojiType === "smile" ? "😊 " : "🙁 "
     setFeedbackText((prev) => visualTag + prev)
@@ -139,12 +143,17 @@ export default function ResultsPage() {
 
   if (!mounted) return null
 
-  const getSemesterString = (num: number) => {
-    const suffixes = ["TH", "ST", "ND", "RD"];
-    const val = num % 100;
-    const suffix = suffixes[(val - 20) % 10] || suffixes[val] || suffixes[0];
-    return `${num}${suffix} SEMESTER`;
-  }
+  // Clean explicit map configurations to support flexible DB spelling entries cleanly
+  const SEMESTER_OPTIONS = [
+    { label: "1st Semester", value: "1TH SEMESTER" },
+    { label: "2nd Semester", value: "2ND SEMESTER" },
+    { label: "3rd Semester", value: "3RD SEMESTER" },
+    { label: "4th Semester", value: "4TH SEMESTER" },
+    { label: "5th Semester", value: "5TH SEMESTER" },
+    { label: "6th Semester", value: "6TH SEMESTER" },
+    { label: "7th Semester", value: "7TH SEMESTER" },
+    { label: "8th Semester", value: "8TH SEMESTER" }
+  ]
 
   return (
     <div className="min-h-screen bg-background" suppressHydrationWarning>
@@ -295,12 +304,9 @@ export default function ResultsPage() {
                         <SelectValue placeholder="Select Semester" />
                       </SelectTrigger>
                       <SelectContent className="bg-slate-900 border-white/10 text-white">
-                        {[1, 2, 3, 4, 5, 6, 7, 8].map(s => {
-                          const formattedValue = getSemesterString(s);
-                          return (
-                            <SelectItem key={s} value={formattedValue}>{s}th Semester</SelectItem>
-                          );
-                        })}
+                        {SEMESTER_OPTIONS.map(opt => (
+                          <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
