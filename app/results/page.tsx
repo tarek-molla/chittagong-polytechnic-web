@@ -72,7 +72,7 @@ export default function ResultsPage() {
     setStudentData(null)
 
     try {
-      // Calls our server action processing pipeline securely
+      // Securely routes your parameters over the updated backend action hook
       const response = await getStudentResult(rollNo, department, semester)
 
       if (response.success) {
