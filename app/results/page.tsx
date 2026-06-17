@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Award, Search, Activity, Database, Send, Smile, Frown, Loader2, User, CheckCircle, Printer, BookOpen } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { getStudentResult } from "@/app/actions/result"
 
 const LocalFixStyles = createGlobalStyle`
   [data-radix-popper-content-wrapper] {
@@ -72,27 +72,13 @@ export default function ResultsPage() {
     setStudentData(null)
 
     try {
-      // Clean target variables to eliminate trailing or leading spaces
-      const targetRoll = rollNo.trim()
-      const targetDept = department.trim()
-      const targetSem = semester.trim()
+      // Calls our server action processing pipeline securely
+      const response = await getStudentResult(rollNo, department, semester)
 
-      const { data, error: dbError } = await supabase
-        .from('results')
-        .select('*')
-        .eq('roll_num', targetRoll)
-        .eq('department', targetDept)
-        .eq('semester', targetSem)
-        .single()
-
-      if (dbError) {
-        if (dbError.code === 'PGRST116') {
-          setError("No certified marksheet found matching these structural parameters.")
-        } else {
-          setError(`Database Error: ${dbError.message}`)
-        }
-      } else if (data) {
-        setStudentData(data)
+      if (response.success) {
+        setStudentData(response.data)
+      } else {
+        setError(response.message || "Failed to locate results.")
       }
     } catch (err) {
       setError("An unexpected system exception occurred while mapping records.")
@@ -143,7 +129,6 @@ export default function ResultsPage() {
 
   if (!mounted) return null
 
-  // Clean explicit map configurations to support flexible DB spelling entries cleanly
   const SEMESTER_OPTIONS = [
     { label: "1st Semester", value: "1TH SEMESTER" },
     { label: "2nd Semester", value: "2ND SEMESTER" },

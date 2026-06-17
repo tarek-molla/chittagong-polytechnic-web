@@ -2,33 +2,49 @@
 
 import { supabase } from '@/lib/supabase'
 
-export async function getStudentResult(rollNum: string, regNum: string) {
+export async function getStudentResult(rollNum: string, department: string, semester: string) {
   const cleanRoll = rollNum.trim()
-  const cleanReg = regNum.trim()
+  const cleanDept = department.trim().toUpperCase()
+  const cleanSem = semester.trim().toUpperCase()
 
-  if (!cleanRoll || !cleanReg) {
-    return { success: false, message: "Roll and Registration numbers are required." }
+  if (!cleanRoll) {
+    return { success: false, message: "Board Roll number is required." }
   }
 
   try {
+    // Exact structural query check
     const { data, error } = await supabase
       .from('results')
       .select('*')
       .eq('roll_num', cleanRoll)
-      .eq('reg_num', cleanReg)
+      .eq('department', cleanDept)
+      .eq('semester', cleanSem)
+      .maybeSingle()
 
     if (error) {
       console.error('Supabase fetch error:', error)
-      return { success: false, message: 'Database fetching failed.' }
+      return { success: false, message: `Database Error: ${error.message}` }
     }
 
-    if (!data || data.length === 0) {
-      return { success: false, message: 'No records found matching those credentials.' }
+    if (!data) {
+      // Flexible loose match lookup handling trailing whitespaces seamlessly
+      const { data: looseData, error: looseError } = await supabase
+        .from('results')
+        .select('*')
+        .ilike('roll_num', `%${cleanRoll}%`)
+        .ilike('department', cleanDept)
+        .ilike('semester', cleanSem)
+        .maybeSingle()
+
+      if (looseError) return { success: false, message: looseError.message }
+      if (!looseData) return { success: false, message: 'No certified marksheet found matching these structural parameters.' }
+      
+      return { success: true, data: looseData }
     }
 
-    return { success: true, results: data }
+    return { success: true, data }
   } catch (err) {
-    console.error('Unexpected error:', err)
-    return { success: false, message: 'An unexpected error occurred.' }
+    console.error('Unexpected action error:', err)
+    return { success: false, message: 'An unexpected system error occurred.' }
   }
 }
