@@ -22,44 +22,63 @@ const LocalFixStyles = createGlobalStyle`
     overflow: hidden;
   }
   @media print {
-    /* Completely isolate and hide global headers, wrappers, and side modules */
-    html, body {
+    /* Completely force layout backgrounds off and strip container boundaries */
+    html, body, main, #__next, div[id^="radix"] {
       background: #ffffff !important;
       color: #000000 !important;
-      width: 100%;
-      height: auto;
+      width: 100% !important;
+      height: auto !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      box-shadow: none !important;
+    }
+    
+    /* Strict global wipeout of all navigation links, floating headers, layout footers, and sidebars */
+    nav, header, footer, section, .no-print, 
+    [class*="header"], [class*="navbar"], [class*="footer"], [class*="navigation"] {
+      display: none !important;
+      opacity: 0 !important;
+      visibility: hidden !important;
+      height: 0 !important;
+      width: 0 !important;
       margin: 0 !important;
       padding: 0 !important;
     }
     
-    /* Target and hide every layout element except the results template card container */
-    nav, header, footer, section, .no-print, [class*="header"], [class*="navbar"] {
-      display: none !important;
-      aria-hidden: true;
-    }
-    
-    /* Clean up structural print presentation boundaries */
+    /* Remap report marksheet container architecture onto pure structural print spaces */
     .marksheet-card { 
       background: #ffffff !important; 
       color: #000000 !important; 
-      border: 1px solid #e2e8f0 !important;
+      border: 2px solid #1e293b !important;
       box-shadow: none !important;
       width: 100% !important;
       max-width: 100% !important;
-      position: relative !important;
+      position: absolute !important;
       top: 0 !important;
       left: 0 !important;
-      margin: 20px auto !important;
-      padding: 24px !important;
+      margin: 0 !important;
+      padding: 40px !important;
       display: block !important;
       page-break-inside: avoid;
     }
     
-    /* Enforce pure monochrome text contrasts for high quality outputs */
-    .text-white, h2, span, p { color: #000000 !important; }
-    .text-blue-400, .text-blue-500 { color: #1e40af !important; }
-    .bg-slate-950\\/90, .bg-slate-900\\/40 { background: #ffffff !important; }
-    .bg-blue-600 { background: #1e40af !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    /* Enforce maximum black-on-white text readability metrics */
+    .text-white, h2, span, p, label { 
+      color: #000000 !important; 
+    }
+    .text-blue-400, .text-blue-500, .text-cyan-400 { 
+      color: #1e40af !important; 
+      font-weight: bold !important;
+    }
+    .bg-slate-950\\/90, .bg-slate-900\\/40, .bg-blue-600\\/10 { 
+      background: #ffffff !important; 
+    }
+    .bg-blue-600 { 
+      background: #1e40af !important; 
+      color: #ffffff !important;
+      -webkit-print-color-adjust: exact; 
+      print-color-adjust: exact; 
+    }
   }
 `;
 
@@ -349,14 +368,23 @@ export default function ResultsPage() {
                              <span className="px-2 py-0.5 rounded-md bg-blue-600 text-[10px] font-bold text-white uppercase tracking-tighter no-print">Verified Result</span>
                              <CheckCircle className="w-3 h-3 text-blue-400 no-print" />
                           </div>
-                          <h2 className="text-3xl font-black uppercase text-white leading-none mb-1">{studentData.student_name}</h2>
-                          <p className="text-sm font-bold text-blue-400 uppercase tracking-widest">Roll: {studentData.roll_num} | {studentData.department}</p>
+                          {/* Secure Fallback Injection logic for string parameters */}
+                          <h2 className="text-3xl font-black uppercase text-white leading-none mb-1">
+                            {studentData.student_name || "STUDENT RECORD"}
+                          </h2>
+                          <p className="text-sm font-bold text-blue-400 uppercase tracking-widest">
+                            Roll: {studentData.roll_num || rollNo} | {studentData.department || "TECHNOLOGY"}
+                          </p>
                         </div>
                       </div>
                       <div className="text-center md:text-right">
-                         <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-2">Semester Ranking: {studentData.semester}</p>
+                         <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-2">
+                           SEMESTER RANKING: {studentData.semester || "SEMESTER"}
+                         </p>
                          <div className="flex items-baseline gap-2 justify-center md:justify-end leading-none">
-                            <span className="text-6xl font-black text-white">{studentData.gpa ? Number(studentData.gpa).toFixed(2) : "0.00"}</span>
+                            <span className="text-6xl font-black text-white">
+                              {studentData.gpa ? Number(studentData.gpa).toFixed(2) : "0.00"}
+                            </span>
                             <span className="text-lg font-bold text-blue-500/50 binds-gpa">GPA</span>
                          </div>
                       </div>
