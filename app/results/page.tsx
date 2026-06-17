@@ -48,7 +48,7 @@ export default function ResultsPage() {
   // Database Query States
   const [rollNo, setRollNo] = useState("")
   const [department, setDepartment] = useState("COMPUTER SCIENCE")
-  const [semester, setSemester] = useState("5TH SEMESTER")
+  const [semester, setSemester] = useState("6TH SEMESTER")
   const [loading, setLoading] = useState(false)
   const [studentData, setStudentData] = useState<any>(null)
   const [error, setError] = useState("")
@@ -72,7 +72,6 @@ export default function ResultsPage() {
     setStudentData(null)
 
     try {
-      // Direct integration with our centralized cloud database instancing layer
       const { data, error: dbError } = await supabase
         .from('results')
         .select('*')
@@ -101,6 +100,12 @@ export default function ResultsPage() {
     if (typeof window !== "undefined") {
       window.print();
     }
+  }
+
+  // Handle dynamic emotional emoji appending inside feedback textarea
+  const handleEmojiClick = (emojiType: "smile" | "frown") => {
+    const visualTag = emojiType === "smile" ? "😊 " : "🙁 "
+    setFeedbackText((prev) => visualTag + prev)
   }
 
   const handleFeedbackSubmit = async () => {
@@ -133,6 +138,13 @@ export default function ResultsPage() {
   }
 
   if (!mounted) return null
+
+  const getSemesterString = (num: number) => {
+    const suffixes = ["TH", "ST", "ND", "RD"];
+    const val = num % 100;
+    const suffix = suffixes[(val - 20) % 10] || suffixes[val] || suffixes[0];
+    return `${num}${suffix} SEMESTER`;
+  }
 
   return (
     <div className="min-h-screen bg-background" suppressHydrationWarning>
@@ -200,19 +212,28 @@ export default function ResultsPage() {
                 value={feedbackText}
                 onChange={(e) => setFeedbackText(e.target.value)}
                 className="col-span-6 h-24 resize-none outline-none rounded-2xl p-4 text-sm border border-white/10 bg-black/20 text-white placeholder:text-white/20 focus:border-blue-500 transition-all" 
-                placeholder="Notice an error?" />
+                placeholder="Notice an error?" 
+              />
               <div className="col-span-6 grid grid-cols-6 gap-3 pt-1">
-                <button className="col-span-1 flex justify-center items-center rounded-xl p-3 border border-white/10 bg-white/5 hover:bg-blue-500/10 transition-colors">
-                  <Smile className="w-5 h-5 text-white/50" />
+                <button 
+                  type="button"
+                  onClick={() => handleEmojiClick("smile")}
+                  className="col-span-1 flex justify-center items-center rounded-xl p-3 border border-white/10 bg-white/5 hover:bg-blue-500/20 active:scale-90 transition-all"
+                >
+                  <Smile className="w-5 h-5 text-blue-400" />
                 </button>
-                <button className="col-span-1 flex justify-center items-center rounded-xl p-3 border border-white/10 bg-white/5 hover:bg-blue-500/10 transition-colors">
-                  <Frown className="w-5 h-5 text-white/50" />
+                <button 
+                  type="button"
+                  onClick={() => handleEmojiClick("frown")}
+                  className="col-span-1 flex justify-center items-center rounded-xl p-3 border border-white/10 bg-white/5 hover:bg-blue-500/20 active:scale-90 transition-all"
+                >
+                  <Frown className="w-5 h-5 text-cyan-400" />
                 </button>
                 <span className="col-span-1" />
                 <button 
                   onClick={handleFeedbackSubmit}
                   disabled={isSendingFeedback}
-                  className="col-span-3 flex items-center justify-center gap-2 rounded-xl p-3 bg-blue-600 text-white shadow-lg active:scale-95 transition-all disabled:opacity-50"
+                  className="col-span-3 flex items-center justify-center gap-2 rounded-xl p-3 bg-blue-600 hover:bg-blue-700 text-white shadow-lg active:scale-95 transition-all disabled:opacity-50"
                 >
                   {isSendingFeedback ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
                   <span className="font-black uppercase text-[10px] tracking-widest">
@@ -233,7 +254,7 @@ export default function ResultsPage() {
                   </div>
                   <div>
                     <CardTitle className="text-3xl font-black uppercase tracking-tight text-white">Internal Search</CardTitle>
-                    <p className="text-xs font-bold uppercase tracking-widest text-blue-500">Query: poly_db_v2</p>
+                    <p className="text-xs font-bold uppercase tracking-widest text-white/40 mt-0.5">Chattogram Polytechnic Institute</p>
                   </div>
                 </div>
               </CardHeader>
@@ -243,7 +264,7 @@ export default function ResultsPage() {
                     <div className="space-y-3">
                       <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-4">Department</Label>
                       <Select value={department} onValueChange={setDepartment}>
-                        <SelectTrigger className="h-14 border-2 border-white/10 rounded-full px-8 text-sm font-bold bg-black/20 text-white focus:border-blue-500 transition-all">
+                        <SelectTrigger className="h-14 border-2 border-white/10 rounded-full px-8 text-sm font-bold bg-black/20 text-white focus:border-blue-500 transition-all outline-none">
                           <SelectValue placeholder="Select Technology" />
                         </SelectTrigger>
                         <SelectContent className="bg-slate-900 border-white/10 text-white">
@@ -262,7 +283,7 @@ export default function ResultsPage() {
                       <Input 
                         value={rollNo}
                         onChange={(e) => setRollNo(e.target.value)}
-                        className="h-14 border-2 border-white/10 rounded-full px-8 text-sm font-bold bg-black/20 text-white focus:border-blue-500 transition-all" 
+                        className="h-14 border-2 border-white/10 rounded-full px-8 text-sm font-bold bg-black/20 text-white focus:border-blue-500 transition-all outline-none" 
                         placeholder="e.g. 787784" 
                       />
                     </div>
@@ -270,13 +291,16 @@ export default function ResultsPage() {
                   <div className="space-y-3">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-4">Semester</Label>
                     <Select value={semester} onValueChange={setSemester}>
-                      <SelectTrigger className="h-14 border-2 border-white/10 rounded-full px-8 text-sm font-bold bg-black/20 text-white focus:border-blue-500 transition-all">
+                      <SelectTrigger className="h-14 border-2 border-white/10 rounded-full px-8 text-sm font-bold bg-black/20 text-white focus:border-blue-500 transition-all outline-none">
                         <SelectValue placeholder="Select Semester" />
                       </SelectTrigger>
                       <SelectContent className="bg-slate-900 border-white/10 text-white">
-                        {[1, 2, 3, 4, 5, 6, 7, 8].map(s => (
-                          <SelectItem key={s} value={`${s}TH SEMESTER`}>{s}th Semester</SelectItem>
-                        ))}
+                        {[1, 2, 3, 4, 5, 6, 7, 8].map(s => {
+                          const formattedValue = getSemesterString(s);
+                          return (
+                            <SelectItem key={s} value={formattedValue}>{s}th Semester</SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                   </div>
