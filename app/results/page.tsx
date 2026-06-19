@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Award, Search, Activity, Database, Send, Smile, Frown, Loader2, User, CheckCircle, Printer, BookOpen } from "lucide-react"
-import { getStudentResult } from "@/app/actions/result"
+import { supabase } from "@/lib/supabase"
 
 const LocalFixStyles = createGlobalStyle`
   [data-radix-popper-content-wrapper] {
@@ -23,18 +23,13 @@ const LocalFixStyles = createGlobalStyle`
   }
   
   @media print {
-    /* Step 1: Hide all items inside the body layout by default using visibility */
     body * {
       visibility: hidden !important;
     }
-
-    /* Step 2: Make only our target results block and its contents visible */
     .print-target-wrapper,
     .print-target-wrapper * {
       visibility: visible !important;
     }
-
-    /* Step 3: Shift the visible print wrapper block up to the absolute top-left boundary */
     .print-target-wrapper {
       position: absolute !important;
       top: 0 !important;
@@ -43,15 +38,12 @@ const LocalFixStyles = createGlobalStyle`
       margin: 0 !important;
       padding: 0 !important;
     }
-
-    /* Step 4: Enforce crisp high-contrast text and paper sizing constraints */
     body {
       background: #ffffff !important;
       color: #000000 !important;
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
     }
-
     .marksheet-card {
       border: 2px solid #000000 !important;
       background: #ffffff !important;
@@ -61,25 +53,20 @@ const LocalFixStyles = createGlobalStyle`
       width: 100% !important;
       display: block !important;
     }
-
-    /* Convert specific dark-theme styling components for bright physical pages */
     .marksheet-card h2,
     .marksheet-card span,
     .marksheet-card p,
     .marksheet-card div {
       color: #000000 !important;
     }
-
     .text-blue-400, .text-blue-500, .text-cyan-400, .binds-gpa {
       color: #1e40af !important;
       font-weight: 900 !important;
     }
-
     .bg-slate-950\\/90, .bg-slate-900\\/40, .bg-blue-600\\/10 {
       background: #f8fafc !important;
       border: 1px solid #cbd5e1 !important;
     }
-
     .bg-blue-600 {
       background: #1e40af !important;
       color: #ffffff !important;
@@ -90,7 +77,6 @@ const LocalFixStyles = createGlobalStyle`
 export default function ResultsPage() {
   const [mounted, setMounted] = useState(false)
   
-  // Database Query States
   const [rollNo, setRollNo] = useState("")
   const [department, setDepartment] = useState("COMPUTER SCIENCE")
   const [semester, setSemester] = useState("6TH SEMESTER")
@@ -98,7 +84,6 @@ export default function ResultsPage() {
   const [studentData, setStudentData] = useState<any>(null)
   const [error, setError] = useState("")
 
-  // Feedback State
   const [feedbackText, setFeedbackText] = useState("")
   const [isSendingFeedback, setIsSendingFeedback] = useState(false)
 
@@ -116,13 +101,40 @@ export default function ResultsPage() {
     setError("")
     setStudentData(null)
 
-    try {
-      const response = await getStudentResult(rollNo, department, semester)
+    const cleanRoll = rollNo.trim()
+    const cleanDept = department.trim().toUpperCase()
+    const cleanSem = semester.trim().toUpperCase()
 
-      if (response.success) {
-        setStudentData(response.data)
+    try {
+      // Dynamic client query mapping database layout values directly
+      const { data, error: fetchErr } = await supabase
+        .from('results')
+        .select('*')
+        .eq('roll_num', cleanRoll)
+        .eq('department', cleanDept)
+        .eq('semester', cleanSem)
+
+      if (fetchErr) {
+        setError(`Database Error: ${fetchErr.message}`)
+        return
+      }
+
+      if (!data || data.length === 0) {
+        // Fallback loose match lookup handling any trailing blank formatting spaces
+        const { data: looseData } = await supabase
+          .from('results')
+          .select('*')
+          .ilike('roll_num', `%${cleanRoll}%`)
+          .ilike('department', cleanDept)
+          .ilike('semester', cleanSem)
+
+        if (!looseData || looseData.length === 0) {
+          setError('No certified marksheet found matching these structural parameters.')
+        } else {
+          setStudentData(looseData[0])
+        }
       } else {
-        setError(response.message || "Failed to locate results.")
+        setStudentData(data[0])
       }
     } catch (err) {
       setError("An unexpected system exception occurred while mapping records.")
@@ -160,7 +172,6 @@ export default function ResultsPage() {
         templateParams, 
         'Bp7PNtQBBl6M1XPe-'
       );
-      
       alert("Feedback sent successfully!");
       setFeedbackText("");
     } catch (err) {
@@ -188,7 +199,6 @@ export default function ResultsPage() {
     <div className="min-h-screen bg-background" suppressHydrationWarning>
       <LocalFixStyles />
       
-      {/* Cinematic Hero */}
       <section className="relative h-[450px] w-full flex items-center justify-center overflow-hidden no-print">
         <div className="absolute inset-0 z-0">
           <div className="w-full h-full animate-pulse opacity-40">
@@ -218,7 +228,6 @@ export default function ResultsPage() {
       <div className="container mx-auto px-4 -mt-20 relative z-20 pb-20">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-6xl mx-auto">
           
-          {/* Left Column (Utilities) */}
           <div className="lg:col-span-4 space-y-6 no-print">
             <StyledWrapper>
               <div className="card">
@@ -243,7 +252,6 @@ export default function ResultsPage() {
               </div>
             </StyledWrapper>
 
-            {/* Feedback Card */}
             <div className="grid grid-cols-6 gap-3 rounded-[35px] p-6 shadow-2xl border border-white/5 bg-slate-900/50 backdrop-blur-md">
               <h1 className="text-center text-white text-2xl font-black col-span-6 mb-2">Feedback</h1>
               <textarea 
@@ -282,7 +290,6 @@ export default function ResultsPage() {
             </div>
           </div>
 
-          {/* Right Column (Search & Results) */}
           <div className="lg:col-span-8 space-y-6">
             <Card className="border-white/5 shadow-2xl rounded-[40px] overflow-hidden bg-slate-900/40 backdrop-blur-md no-print">
               <CardHeader className="p-10 pb-6">
@@ -351,14 +358,12 @@ export default function ResultsPage() {
               </CardContent>
             </Card>
 
-            {/* Error Processing Layout Section */}
             {error && (
               <div className="p-4 rounded-[20px] border border-red-500/20 bg-red-500/10 text-red-400 font-bold uppercase tracking-wider text-xs text-center animate-in zoom-in-95 duration-200">
                 {error}
               </div>
             )}
 
-            {/* RESULT CARD WRAPPER TO FORCE ISOLATION ON PRINT */}
             {studentData && (
               <div className="print-target-wrapper animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <Card className="marksheet-card border-blue-500/50 bg-blue-600/10 rounded-[40px] overflow-hidden p-1 shadow-2xl">
@@ -446,9 +451,7 @@ const StyledWrapper = styled.div`
     z-index: 2;
     pointer-events: auto;
   }
-  .card:hover .back {
-    pointer-events: none;
-  }
+  .card:hover .back { pointer-events: none; }
   .back::before { position: absolute; content: ''; width: 40%; height: 200%; background: linear-gradient(90deg, transparent, #3b82f6, transparent); animation: rotate 4s infinite linear; }
   .back-content { position: absolute; width: 98%; height: 98%; background: #0f172a; border-radius: 33px; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1; }
   .front { 
@@ -462,10 +465,7 @@ const StyledWrapper = styled.div`
     z-index: 1;
     pointer-events: none;
   }
-  .card:hover .front {
-    z-index: 5;
-    pointer-events: auto;
-  }
+  .card:hover .front { z-index: 5; pointer-events: auto; }
   .front-content { position: relative; z-index: 1; display: flex; flex-direction: column; justify-content: space-between; height: 100%; }
   .badge { background: #1e293b; border: 1px solid #334155; color: #60a5fa; padding: 4px 12px; border-radius: 10px; font-size: 9px; font-weight: 900; width: fit-content; text-transform: uppercase; margin: 0 auto; }
   .redirect-btn { 

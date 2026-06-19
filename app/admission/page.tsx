@@ -1,20 +1,21 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { 
-  User, Mail, Phone, Calendar, Globe, 
-  MapPin, GraduationCap, ArrowRight, Loader2, CheckCircle2 
-} from "lucide-react"
+import type React from "react"
+import { useState, useEffect } from "react"
+import Image from "next/image"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { applyStudent } from "@/app/actions/student"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { User, Mail, Phone, Globe, Calendar, BookOpen, GraduationCap, Loader2 } from "lucide-react"
+import { supabase } from "@/lib/supabase"
 
 export default function AdmissionPage() {
   const [mounted, setMounted] = useState(false)
-  
-  // Form State matching camelCase server actions input names
+  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState({ type: "", text: "" })
+
   const [formData, setFormData] = useState({
     fullName: "",
     fatherName: "",
@@ -27,260 +28,200 @@ export default function AdmissionPage() {
     department: "COMPUTER SCIENCE"
   })
 
-  const [loading, setLoading] = useState(false)
-  const [status, setStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null)
-  const [errors, setErrors] = useState<Record<string, string[]>>({})
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
-  useEffect(() => setMounted(true), [])
+  if (!mounted) return null
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
-    // Clear error state for the field when user alters it
-    if (errors[e.target.name]) {
-      const newErrors = { ...errors }
-      delete newErrors[e.target.name]
-      setErrors(newErrors)
-    }
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target
+    setFormData((prev) => ({ ...prev, [id]: value }))
   }
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSelectChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!formData.fullName || !formData.email || !formData.phone) {
+      setMessage({ type: "error", text: "Please complete all mandatory fields." })
+      return
+    }
+
     setLoading(true)
-    setStatus(null)
-    setErrors({})
+    setMessage({ type: "", text: "" })
 
     try {
-      const data = new FormData(e.currentTarget)
-      const result = await applyStudent(null, data) // Passes null as prevState matching action structure
+      // Client-Side Safe Insert running directly inside static constraints
+      const { data, error } = await supabase
+        .from('applications')
+        .insert([
+          {
+            full_name: formData.fullName,
+            father_name: formData.fatherName,
+            mother_name: formData.motherName,
+            email_address: formData.email,
+            phone_number: formData.phone,
+            nationality: formData.nationality,
+            date_of_birth: formData.dob,
+            religion: formData.religion,
+            department_choice: formData.department
+          }
+        ])
 
-      if (result.success) {
-        setStatus({ type: 'success', msg: result.message || "Success!" })
-        // Clear all input elements on success
-        setFormData({
-          fullName: "", fatherName: "", motherName: "", email: "",
-          phone: "", nationality: "BANGLADESHI", dob: "",
-          religion: "", department: "COMPUTER SCIENCE"
-        })
+      if (error) {
+        setMessage({ type: "error", text: error.message })
       } else {
-        // Handle validation errors or database errors safely
-        if (result.errors) {
-          setErrors(result.errors as Record<string, string[]>)
-          setStatus({ type: 'error', msg: result.message || "Please correct the errors below." })
-        } else {
-          setStatus({ type: 'error', msg: result.message || "Submission failed" })
-        }
+        setMessage({ type: "success", text: "Enrollment Form submitted successfully!" })
+        setFormData({
+          fullName: "",
+          fatherName: "",
+          motherName: "",
+          email: "",
+          phone: "",
+          nationality: "BANGLADESHI",
+          dob: "",
+          religion: "",
+          department: "COMPUTER SCIENCE"
+        })
       }
-    } catch (error) {
-      setStatus({ type: 'error', msg: "An unexpected error occurred." })
+    } catch (err) {
+      setMessage({ type: "error", text: "A communication fault occurred with the database." })
     } finally {
       setLoading(false)
     }
   }
 
-  if (!mounted) return null
-
   return (
-    <div className="min-h-screen bg-background transition-colors duration-500 overflow-x-hidden">
-      
-      {/* Cinematic Hero Section */}
-      <section className="relative h-[450px] w-full flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <div className="w-full h-full scale-110 animate-slow-zoom will-change-transform">
-            <img
-              src="/images/ag0ilsxmrnaeudvnbrkymbql5ivwt0or.png"
-              alt="Background"
-              className="w-full h-full object-cover"
-            />
-          </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent z-10" />
-          <div className="absolute inset-0 bg-black/40 z-0" />
-        </div>
+    <div className="min-h-screen bg-slate-950 text-slate-50 flex items-center justify-center p-4 md:p-8 relative overflow-hidden">
+      <div className="absolute top-0 left-0 w-full h-full z-0 opacity-20 animate-pulse">
+        <Image 
+          src="/images/ag0ilsyuoai-72tf0ezktwdothekvqkd.png" 
+          alt="Overlay" 
+          fill 
+          className="object-cover"
+          priority
+        />
+      </div>
+      <div className="absolute inset-0 bg-gradient-to-b from-slate-950/80 via-slate-950/40 to-slate-950 z-10" />
+
+      <Card className="w-full max-w-4xl border-white/5 bg-slate-900/40 backdrop-blur-xl rounded-[40px] shadow-2xl relative z-20 overflow-hidden">
+        <CardHeader className="bg-blue-600 p-8 text-center text-white relative">
+          <GraduationCap className="w-12 h-12 mx-auto mb-2 opacity-90 drop-shadow-md" />
+          <CardTitle className="text-3xl font-black uppercase tracking-wider">Student Information Form</CardTitle>
+          <p className="text-xs uppercase font-bold tracking-widest text-blue-100 mt-1">Official Enrollment 2026</p>
+        </CardHeader>
         
-        <div className="relative container mx-auto px-4 text-center z-20 animate-in fade-in slide-in-from-bottom-8 duration-1000 ease-out">
-          <div className="inline-block p-3 rounded-2xl bg-blue-500/10 backdrop-blur-md mb-6 border border-blue-500/20 shadow-[0_0_20px_rgba(59,130,246,0.3)]">
-            <GraduationCap className="w-10 h-10 text-blue-500" />
-          </div>
-          
-          <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-none mb-4">
-            <span className="text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">Online </span>
-            <span 
-              className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-300 inline-block"
-              style={{ filter: 'drop-shadow(0 0 15px rgba(59,130,246,0.6))' }}
-            >
-              Application
-            </span>
-          </h1>
-
-          <p className="text-white/70 text-sm md:text-base max-w-xl mx-auto uppercase tracking-[0.4em] font-black italic">
-            Shape Your Tech Destiny
-          </p>
-        </div>
-      </section>
-
-      {/* Main Content Area */}
-      <section className="relative z-30 -mt-20 px-4 pb-20">
-        <Card className="w-full max-w-4xl mx-auto border-card-border bg-card-gradient backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] rounded-[2.5rem] overflow-hidden">
-          
-          <CardHeader className="relative overflow-hidden bg-blue-600 p-6 text-center text-white">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-shimmer" />
-            <div className="relative z-10">
-              <CardTitle className="text-2xl font-black tracking-tighter uppercase italic">
-                Student Information Form
-              </CardTitle>
-              <p className="text-blue-100 text-[10px] font-black uppercase tracking-widest mt-1">Official Enrollment 2026</p>
+        <CardContent className="p-6 md:p-10">
+          {message.text && (
+            <div className={`p-4 mb-8 rounded-2xl text-center text-xs font-black uppercase tracking-wider border ${
+              message.type === "success" 
+                ? "bg-green-500/10 border-green-500/20 text-green-400" 
+                : "bg-red-500/10 border-red-500/20 text-red-400"
+            }`}>
+              {message.text}
             </div>
-          </CardHeader>
-          
-          <CardContent className="p-6 md:p-10">
-            {/* Status Notification banner */}
-            {status && (
-              <div className={`mb-8 p-4 rounded-2xl border flex items-center gap-3 animate-in fade-in zoom-in duration-300 ${
-                status.type === 'success' ? 'bg-green-500/10 border-green-500/20 text-green-500' : 'bg-red-500/10 border-red-500/20 text-red-500'
-              }`}>
-                {status.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <Loader2 className="w-5 h-5 animate-spin" />}
-                <p className="font-black uppercase text-xs tracking-widest">{status.msg}</p>
-              </div>
-            )}
+          )}
 
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-6">
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               
-              {/* Full Name input configuration */}
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Full Name *</Label>
-                <div className="relative group">
-                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
-                  <Input name="fullName" value={formData.fullName} onChange={handleChange} required placeholder="JOHN DOE" className={`pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10 ${errors.full_name ? 'border-red-500' : ''}`} />
+              <div className="space-y-2">
+                <Label htmlFor="fullName" className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Full Name *</Label>
+                <div className="relative">
+                  <User className="absolute left-4 top-4 w-4 h-4 text-slate-400" />
+                  <Input id="fullName" value={formData.fullName} onChange={handleChange} className="h-12 pl-12 rounded-xl bg-black/20 border-white/10 text-white focus:border-blue-500" placeholder="Tarek Molla" />
                 </div>
-                {errors.full_name && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.full_name[0]}</p>}
               </div>
 
-              {/* Father Name input configuration */}
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Father's Name *</Label>
-                <div className="relative group">
-                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
-                  <Input name="fatherName" value={formData.fatherName} onChange={handleChange} required placeholder="FATHER'S NAME" className={`pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10 ${errors.father_name ? 'border-red-500' : ''}`} />
+              <div className="space-y-2">
+                <Label htmlFor="fatherName" className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Father's Name *</Label>
+                <div className="relative">
+                  <User className="absolute left-4 top-4 w-4 h-4 text-slate-400" />
+                  <Input id="fatherName" value={formData.fatherName} onChange={handleChange} className="h-12 pl-12 rounded-xl bg-black/20 border-white/10 text-white focus:border-blue-500" placeholder="Father's Name" />
                 </div>
-                {errors.father_name && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.father_name[0]}</p>}
               </div>
 
-              {/* Mother Name input configuration */}
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Mother's Name *</Label>
-                <div className="relative group">
-                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
-                  <Input name="motherName" value={formData.motherName} onChange={handleChange} required placeholder="MOTHER'S NAME" className={`pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10 ${errors.mother_name ? 'border-red-500' : ''}`} />
+              <div className="space-y-2">
+                <Label htmlFor="motherName" className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Mother's Name *</Label>
+                <div className="relative">
+                  <User className="absolute left-4 top-4 w-4 h-4 text-slate-400" />
+                  <Input id="motherName" value={formData.motherName} onChange={handleChange} className="h-12 pl-12 rounded-xl bg-black/20 border-white/10 text-white focus:border-blue-500" placeholder="Mother's Name" />
                 </div>
-                {errors.mother_name && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.mother_name[0]}</p>}
               </div>
 
-              {/* Email Address input configuration */}
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Email Address *</Label>
-                <div className="relative group">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
-                  <Input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder="EMAIL@EXAMPLE.COM" className={`pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10 ${errors.email ? 'border-red-500' : ''}`} />
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Email Address *</Label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-4 w-4 h-4 text-slate-400" />
+                  <Input id="email" type="email" value={formData.email} onChange={handleChange} className="h-12 pl-12 rounded-xl bg-black/20 border-white/10 text-white focus:border-blue-500" placeholder="example@mail.com" />
                 </div>
-                {errors.email && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.email[0]}</p>}
               </div>
 
-              {/* Phone Number input configuration */}
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Phone Number *</Label>
-                <div className="relative group">
-                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
-                  <Input name="phone" value={formData.phone} onChange={handleChange} required placeholder="01XXXXXXXXX" className={`pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10 ${errors.phone ? 'border-red-500' : ''}`} />
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Phone Number *</Label>
+                <div className="relative">
+                  <Phone className="absolute left-4 top-4 w-4 h-4 text-slate-400" />
+                  <Input id="phone" value={formData.phone} onChange={handleChange} className="h-12 pl-12 rounded-xl bg-black/20 border-white/10 text-white focus:border-blue-500" placeholder="01XXXXXXXXX" />
                 </div>
-                {errors.phone && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.phone[0]}</p>}
               </div>
 
-              {/* Nationality input configuration */}
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Nationality *</Label>
-                <div className="relative group">
-                  <Globe className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
-                  <Input name="nationality" value={formData.nationality} onChange={handleChange} required placeholder="BANGLADESHI" className={`pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10 ${errors.nationality ? 'border-red-500' : ''}`} />
+              <div className="space-y-2">
+                <Label htmlFor="nationality" className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Nationality *</Label>
+                <div className="relative">
+                  <Globe className="absolute left-4 top-4 w-4 h-4 text-slate-400 z-10" />
+                  <Input id="nationality" value={formData.nationality} onChange={handleChange} className="h-12 pl-12 rounded-xl bg-black/20 border-white/10 text-white focus:border-blue-500" />
                 </div>
-                {errors.nationality && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.nationality[0]}</p>}
               </div>
 
-              {/* Date of Birth input configuration */}
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Date of Birth *</Label>
-                <div className="relative group">
-                  <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
-                  <Input type="date" name="dob" value={formData.dob} onChange={handleChange} required className={`pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10 ${errors.dob ? 'border-red-500' : ''}`} />
+              <div className="space-y-2">
+                <Label htmlFor="dob" className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Date of Birth *</Label>
+                <div className="relative">
+                  <Calendar className="absolute left-4 top-4 w-4 h-4 text-slate-400 z-10" />
+                  <Input id="dob" type="date" value={formData.dob} onChange={handleChange} className="h-12 pl-12 pr-4 rounded-xl bg-black/20 border-white/10 text-white focus:border-blue-500 dark:[color-scheme:dark]" />
                 </div>
-                {errors.dob && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.dob[0]}</p>}
               </div>
 
-              {/* Religion input configuration */}
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Religion *</Label>
-                <div className="relative group">
-                  <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
-                  <Input name="religion" value={formData.religion} onChange={handleChange} required placeholder="RELIGION" className={`pl-11 h-12 rounded-xl bg-slate-500/5 dark:bg-white/5 border-white/10 ${errors.religion ? 'border-red-500' : ''}`} />
+              <div className="space-y-2">
+                <Label htmlFor="religion" className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Religion *</Label>
+                <div className="relative">
+                  <BookOpen className="absolute left-4 top-4 w-4 h-4 text-slate-400" />
+                  <Input id="religion" value={formData.religion} onChange={handleChange} className="h-12 pl-12 rounded-xl bg-black/20 border-white/10 text-white focus:border-blue-500" placeholder="Religion" />
                 </div>
-                {errors.religion && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.religion[0]}</p>}
               </div>
 
-              {/* Fully Extended Department Selection Menu */}
-              <div className="space-y-1.5 md:col-span-1">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">Department Choice *</Label>
-                <select 
-                  name="department" 
-                  value={formData.department} 
-                  onChange={handleChange}
-                  className={`flex h-12 w-full rounded-xl border border-white/10 bg-slate-500/5 dark:bg-white/5 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer ${errors.department ? 'border-red-500' : ''}`}
-                >
-                  <option className="bg-slate-900" value="COMPUTER SCIENCE">COMPUTER SCIENCE</option>
-                  <option className="bg-slate-900" value="CIVIL TECHNOLOGY">CIVIL TECHNOLOGY</option>
-                  <option className="bg-slate-900" value="ELECTRICAL">ELECTRICAL</option>
-                  <option className="bg-slate-900" value="MECHANICAL">MECHANICAL</option>
-                  <option className="bg-slate-900" value="POWER">POWER</option>
-                  <option className="bg-slate-900" value="ELECTRONICS">ELECTRONICS</option>
-                  <option className="bg-slate-900" value="ENVIRONMENTAL">ENVIRONMENTAL</option>
-                </select>
-                {errors.department && <p className="text-[10px] text-red-500 mt-1 ml-1">{errors.department[0]}</p>}
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Department Choice *</Label>
+                <Select value={formData.department} onValueChange={(val) => handleSelectChange("department", val)}>
+                  <SelectTrigger className="h-12 rounded-xl bg-black/20 border-white/10 text-white focus:border-blue-500">
+                    <SelectValue placeholder="Select Department" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-white/10 text-white">
+                    <SelectItem value="COMPUTER SCIENCE">COMPUTER SCIENCE</SelectItem>
+                    <SelectItem value="CIVIL TECHNOLOGY">CIVIL TECHNOLOGY</SelectItem>
+                    <SelectItem value="ELECTRICAL">ELECTRICAL</SelectItem>
+                    <SelectItem value="MECHANICAL">MECHANICAL</SelectItem>
+                    <SelectItem value="ELECTRONICS">ELECTRONICS</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
-              {/* Action Submit Button Component */}
-              <div className="md:col-span-3 pt-6 mt-4 border-t border-white/5">
-                <Button 
-                  type="submit" 
-                  disabled={loading}
-                  className="w-full h-14 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-[0.3em] shadow-[0_15px_30px_-10px_rgba(37,99,235,0.5)] transition-all active:scale-95 group"
-                >
-                  {loading ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <>
-                      Finalize Submission 
-                      <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      </section>
+            </div>
 
-      <style jsx global>{`
-        @keyframes slow-zoom {
-          from { transform: scale(1); }
-          to { transform: scale(1.15); }
-        }
-        @keyframes shimmer {
-          100% { transform: translateX(100%); }
-        }
-        .animate-slow-zoom {
-          animation: slow-zoom 20s linear infinite alternate;
-        }
-        .animate-shimmer {
-          animation: shimmer 2.5s infinite;
-        }
-      `}</style>
+            <Button 
+              type="submit" 
+              disabled={loading}
+              className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest rounded-xl transition-all shadow-xl shadow-blue-600/20 active:scale-[0.99]"
+            >
+              {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
+              {loading ? "Processing Submission..." : "Finalize Submission"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   )
 }

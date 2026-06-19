@@ -1,12 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Bypasses path resolution strictness to ensure compilation succeeds seamlessly
+  // Tells Next.js to compile the application into pure static HTML/CSS/JS assets
+  output: 'export',
   typescript: {
     ignoreBuildErrors: true,
-  },
-  // Prevents production build crashes from minor code linting format warnings
-  eslint: {
-    ignoreDuringBuilds: true,
   },
 };
 
